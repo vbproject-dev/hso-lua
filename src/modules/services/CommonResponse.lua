@@ -88,6 +88,7 @@ function CommonResponse.itemTemplate(session)
         local packet = Packet.new(Cmd.ITEM_TEMPLATE)
 
         -- ITEM POTION
+
         packet:writeShort(GameData.potions:size())
         GameData.potions:forEach(function(item)
             packet:writeShort(item.id)

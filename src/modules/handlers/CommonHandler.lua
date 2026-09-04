@@ -12,7 +12,7 @@ function CommonHandler.onLogin(session, packet)
 
     -- Check if the account exists and the password is correct
 
-    local MySQL = require("database.MySQL")
+    local MySQL = require("core.MySQL")
     local db = MySQL.instance()
     local account, err = db:from("account"):where("username", user):getFirst()
 

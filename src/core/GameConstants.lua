@@ -1,4 +1,4 @@
-local MySQL  = require "database.MySQL"
+local MySQL  = require "core.MySQL"
 
 _G.loadTable = function(tableName)
     local db = MySQL.instance()

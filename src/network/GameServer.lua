@@ -1,5 +1,5 @@
 local Config          = require("core.Config")
-local MySQL           = require("database.MySQL")
+local MySQL           = require("core.MySQL")
 local Network         = require("network.Network")
 local HandlerRegistry = require("core.HandlerRegistry")
 local GameData        = require("database.GameData")
