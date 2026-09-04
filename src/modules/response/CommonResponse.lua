@@ -51,10 +51,32 @@ function CommonResponse.sendPartData(session, data)
     end)
 end
 
-function CommonResponse.loginSuccess(session)
+function CommonResponse.loginSuccess(session, characters)
     return try(function()
         local packet = Packet.new(Cmd.LIST_CHAR)
 
+        packet:writeByte(#characters)
+        for _, data in ipairs(characters) do
+            packet:writeInt(data.id)
+            packet:writeUTF(data.name)
+
+            packet:writeByte(data.info.head)
+            packet:writeByte(data.info.hair)
+            packet:writeByte(data.info.eye)
+
+            packet:writeByte(#data.wearing)
+            for __, item in ipairs(data.wearing) do
+                packet:writeByte(item.type)
+                packet:writeByte(item.part)
+            end
+            packet:writeShort(data.level)
+            packet:writeByte(data.class)
+            packet:writeByte(0)
+            packet:writeByte(0)
+
+            -- Clan
+            packet:writeShort(-1)
+        end
         session:send(packet)
     end)
 end

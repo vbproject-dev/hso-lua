@@ -34,8 +34,19 @@ function PacketReader.onLoadPartImage(packet)
     }
 end
 
+function PacketReader.onCreateChar(packet)
+    return {
+        class = packet:readByte(),
+        name = packet:readUTF(),
+        hair = packet:readByte(),
+        eye = packet:readByte(),
+        head = packet:readByte(),
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
     [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = PacketReader.onLoadPartImage,
+    [Cmd.CREATE_CHAR] = PacketReader.onCreateChar,
 }
