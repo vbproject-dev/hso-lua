@@ -18,25 +18,6 @@ end
 function Main:init()
     self.gameServer = GameServer.new()
     self.gameServer:init()
-
-    -- local encrypt, err = LuaPacker.packDirectory("assets/src", "encrypt")
-    -- if err then
-    --     log(err)
-    -- end
-
-    -- local content = "{}"
-
-    -- local response, err = API.upload(
-    --     "test.json",
-    --     content
-    -- )
-
-    -- if not response then
-    --     print("Upload failed:", err)
-    --     return
-    -- end
-
-    -- print("Upload:", response)
 end
 
 function Main:onUpdate(dt)
