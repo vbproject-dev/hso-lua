@@ -5,6 +5,9 @@ local GameData = {
     materials = ArrayList.new(),
     potions = ArrayList.new(),
     options = ArrayList.new(),
+    maps = ArrayList.new(),
+    npcs = ArrayList.new(),
+    skills = ArrayList.new()
 }
 
 function GameData.load()
@@ -15,6 +18,9 @@ function GameData.load()
         { table = "item_material",  field = "materials" },
         { table = "item_potion",    field = "potions" },
         { table = "item_option",    field = "options" },
+        { table = "map_data",       field = "maps" },
+        { table = "npc",            field = "npcs" },
+        { table = "skill",          field = "skills" }
     }
 
     for _, dataset in ipairs(datasets) do
@@ -33,7 +39,8 @@ function GameData.load()
 end
 
 function GameData.getSetting(name)
-    return GameData.settings:findFirst(function(data) return data.name == name end).data
+    local setting = GameData.settings:findFirst(function(data) return data.name == name end)
+    return setting and setting.data
 end
 
 function GameData.getEquipment(id)
@@ -46,6 +53,14 @@ end
 
 function GameData.getPotion(id)
     return GameData.potions:findFirst(function(data) return data.id == id end)
+end
+
+function GameData.getNpc(id)
+    return GameData.npcs:findFirst(function(data) return data.id == id end)
+end
+
+function GameData.getSkill(id)
+    return GameData.skills:findFirst(function(data) return data.id == id end)
 end
 
 return GameData

@@ -1,6 +1,6 @@
 local Cmd            = require "network.Cmd"
 local PacketReader   = require "modules.PacketReader"
-local CommonResponse = require "modules.services.CommonResponse"
+local CommonResponse = require "modules.response.CommonResponse"
 local PartManager    = require "database.PartManager"
 
 local CommonHandler  = {}
@@ -70,6 +70,7 @@ end
 function CommonHandler.onNameServer(session, packet)
     CommonResponse.monsterCatalog(session)
     CommonResponse.itemTemplate(session)
+    CommonResponse.nameServer(session)
 end
 
 return {

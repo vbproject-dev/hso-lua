@@ -156,4 +156,37 @@ function CommonResponse.itemTemplate(session)
     end)
 end
 
+function CommonResponse.nameServer(session)
+    return try(function()
+        local packet = Packet.new(Cmd.NAME_SERVER)
+
+        packet:writeByte(GameData.maps:size())
+        GameData.maps:forEach(function(map)
+            packet:writeUTF(map.name)
+        end)
+
+        packet:writeByte(1)
+        packet:writeUTF("Nothing")
+
+        local cfg = GameData.getSetting("config")
+        packet:writeByte(#cfg.upgrade_materials)
+        for _, id in ipairs(cfg.upgrade_materials) do
+            packet:writeShort(id)
+        end
+
+        packet:writeByte(#cfg.upgrade_levels)
+        for _, data in ipairs(cfg.upgrade_levels) do
+            packet:writeByte(data.level)
+            packet:writeInt(data.gold)
+            packet:writeShort(data.gem)
+            for _, id in ipairs(data.value) do
+                packet:writeByte(id)
+            end
+        end
+
+        session:send(packet)
+        log("Send name server")
+    end)
+end
+
 return CommonResponse
