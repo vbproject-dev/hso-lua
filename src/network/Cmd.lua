@@ -59,7 +59,6 @@ local Cmd = {
     PLAYER_EXIT = 8,
     MONSTER_FIRE = 10,
     CHANGE_MAP = 12,
-    LIST_CHAR = 13,
     CHAR_WEARING = 15,
     CHAR_INVENTORY = 16,
     DIE_MONSTER = 17,
@@ -129,8 +128,6 @@ local Cmd = {
     USE_MATERIAL = -107,
     FILL_REC_UPDATE_TIME = -108,
     GET_NAP_STORE_APPLE = -109,
-
-    PING = -123,
 
 
 }

@@ -3,6 +3,8 @@ local CommonResponse = require("modules.response.CommonResponse")
 local PartManager    = require("database.PartManager")
 local MySQL          = require("core.MySQL")
 local GameData       = require("database.GameData")
+local Equipment      = require("modules.game.items.Equipment")
+local Player         = require("modules.game.entities.Player")
 local CommonHandler  = {}
 
 local BODY           = {}
@@ -71,9 +73,7 @@ function CommonHandler.onLogin(session, request)
         return false
     end
 
-    -- Send the login success response
-
-    CommonResponse.loginSuccess(session, characters)
+    CommonResponse.selectCharacter(session)
     return true
 end
 
@@ -145,19 +145,11 @@ function CommonHandler.onCreateChar(session, request)
     end
 
     -- Prepare the equipment
-    local wearing = {}
-    for __, id in pairs(items[request.class]) do
-        local item = GameData.getEquipment(id)
-        if item then
-            wearing[#wearing + 1] = {
-                id = item.id,
-                type = item.type,
-                part = item.part,
-                level = item.level,
-                color = item.color,
-                options = item.option,
-                plus = 0
-            }
+
+    local wearing = ArrayList.new()
+    for _, id in pairs(items[request.class]) do
+        if GameData.getEquipment(id) then
+            wearing:add(Equipment.new({ id = id }):toWearingTable())
         end
     end
 
@@ -178,7 +170,7 @@ function CommonHandler.onCreateChar(session, request)
         exp = 0,
         gold = 1000,
         gem = 100,
-        wearing = JSON.fromTable(wearing),
+        wearing = JSON.fromTable(wearing:toTable()),
         bag = "[]",
         bank = "[]",
         location = JSON.fromTable({ map = 0, x = 132, y = 132 }),
@@ -198,17 +190,27 @@ function CommonHandler.onCreateChar(session, request)
         return CommonResponse.noticeBox(session, "Failed to create character")
     end
 
-    -- Get the characters associated to the account
-    local characters, err = db:from("player"):where("account_id", account.id):getAll()
 
-    if err then
-        log("Failed to get characters: " .. tostring(err))
-        return false
+    return CommonResponse.selectCharacter(session)
+end
+
+function CommonHandler.onSelectChar(session, request)
+    local db = MySQL.instance()
+    local account = session:get("account")
+
+    local character, err = db:from("player"):where("id", request.id):getFirst()
+    if not character then
+        return CommonResponse.noticeBox(session, "Character not found")
     end
 
-    -- Send the login success response
+    if character.account_id ~= account.id then
+        return CommonResponse.noticeBox(session, "Character does not belong to you")
+    end
 
-    return CommonResponse.loginSuccess(session, characters)
+    session:set("player", Player.new(character))
+
+    -- CommonResponse.enterGame(session)
+    return true
 end
 
 return {
@@ -217,6 +219,7 @@ return {
         [Cmd.NAME_SERVER] = CommonHandler.onNameServer,
         [Cmd.LOAD_IMAGE] = CommonHandler.onLoadImage,
         [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = CommonHandler.onLoadPartImage,
-        [Cmd.CREATE_CHAR] = CommonHandler.onCreateChar
+        [Cmd.CREATE_CHAR] = CommonHandler.onCreateChar,
+        [Cmd.SELECT_CHAR] = CommonHandler.onSelectChar,
     }
 }

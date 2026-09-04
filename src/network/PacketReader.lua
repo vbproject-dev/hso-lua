@@ -44,9 +44,17 @@ function PacketReader.onCreateChar(packet)
     }
 end
 
+function PacketReader.onSelectChar(packet)
+    return {
+        type = packet:readByte(),
+        id = packet:readInt(),
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
     [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = PacketReader.onLoadPartImage,
     [Cmd.CREATE_CHAR] = PacketReader.onCreateChar,
+    [Cmd.SELECT_CHAR] = PacketReader.onSelectChar,
 }

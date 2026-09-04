@@ -1,5 +1,6 @@
-local Cmd = require("network.Cmd")
-local GameData = require("database.GameData")
+local Cmd            = require("network.Cmd")
+local GameData       = require("database.GameData")
+local Player         = require("modules.game.entities.Player")
 local CommonResponse = {}
 
 function CommonResponse.loginFail(session, text)
@@ -51,32 +52,47 @@ function CommonResponse.sendPartData(session, data)
     end)
 end
 
-function CommonResponse.loginSuccess(session, characters)
+function CommonResponse.selectCharacter(session)
     return try(function()
-        local packet = Packet.new(Cmd.LIST_CHAR)
+        local account = session:get("account")
 
-        packet:writeByte(#characters)
-        for _, data in ipairs(characters) do
-            packet:writeInt(data.id)
-            packet:writeUTF(data.name)
+        local db = require("core.MySQL").instance()
+        local charactersData, err = db:from("player"):where("account_id", account.id):getAll()
 
-            packet:writeByte(data.info.head)
-            packet:writeByte(data.info.hair)
-            packet:writeByte(data.info.eye)
+        if err then
+            log("Failed to get characters: " .. tostring(err))
+            return false
+        end
+        local characters = ArrayList.new()
+        for __, data in ipairs(charactersData) do
+            characters:add(Player.new(data))
+        end
 
-            packet:writeByte(#data.wearing)
-            for __, item in ipairs(data.wearing) do
-                packet:writeByte(item.type)
-                packet:writeByte(item.part)
-            end
-            packet:writeShort(data.level)
-            packet:writeByte(data.class)
+        local packet = Packet.new(Cmd.SELECT_CHAR)
+
+        packet:writeByte(characters:size())
+        characters:forEach(function(player)
+            packet:writeInt(player.id)
+            packet:writeUTF(player.name)
+
+            packet:writeByte(player.info.head)
+            packet:writeByte(player.info.hair)
+            packet:writeByte(player.info.eye)
+
+            packet:writeByte(player.wearing:size())
+            player.wearing:forEach(function(item)
+                packet:writeByte(item.info.type)
+                packet:writeByte(item.info.part)
+            end)
+
+            packet:writeShort(player.level)
+            packet:writeByte(player.class)
             packet:writeByte(0)
             packet:writeByte(0)
 
             -- Clan
             packet:writeShort(-1)
-        end
+        end)
         session:send(packet)
     end)
 end
