@@ -1,8 +1,8 @@
 {
     "database": {
-        "host": "localhost", 
-        "user": "root", 
-        "password": "123465", 
+        "host": "localhost",
+        "user": "root",
+        "password": "@kmzWay87aa",
         "name": "hso_lua",
         "port": 3306
     },
