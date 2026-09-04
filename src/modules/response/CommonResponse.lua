@@ -1,5 +1,5 @@
-local Cmd = require "network.Cmd"
-local GameData = require "database.GameData"
+local Cmd = require("network.Cmd")
+local GameData = require("database.GameData")
 local CommonResponse = {}
 
 function CommonResponse.loginFail(session, text)
@@ -148,7 +148,7 @@ function CommonResponse.itemTemplate(session)
 
         -- CRAFT MATERIAL
         packet:writeByte(#cfg.craft_material)
-        for _, id in ipairs(cfg.craf_material) do
+        for _, id in ipairs(cfg.craft_material) do
             packet:writeShort(id)
         end
 
@@ -185,7 +185,15 @@ function CommonResponse.nameServer(session)
         end
 
         session:send(packet)
-        log("Send name server")
+    end)
+end
+
+function CommonResponse.loadImage(session, data)
+    return try(function()
+        local packet = Packet.new(Cmd.LOAD_IMAGE)
+        packet:writeShort(data.id)
+        packet:writeBytes(data.bytes)
+        session:send(packet)
     end)
 end
 

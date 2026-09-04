@@ -21,6 +21,21 @@ function PacketReader.onLogin(packet)
     }
 end
 
+function PacketReader.onLoadImage(packet)
+    return {
+        id = packet:readShort(),
+    }
+end
+
+function PacketReader.onLoadPartImage(packet)
+    return {
+        type = packet:readByte(),
+        id = packet:readShort(),
+    }
+end
+
 return {
-    [Cmd.LOGIN] = PacketReader.onLogin
+    [Cmd.LOGIN] = PacketReader.onLogin,
+    [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
+    [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = PacketReader.onLoadPartImage,
 }

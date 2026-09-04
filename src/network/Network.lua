@@ -43,7 +43,11 @@ function Network:handle(session, packet)
         return false
     end
 
-    local success, err = xpcall(handler, debug.traceback, session, packet)
+    local PacketReader = require("network.PacketReader")
+    local reader = PacketReader[command]
+    local request = reader and reader(packet) or {}
+
+    local success, err = xpcall(handler, debug.traceback, session, request)
 
     if not success then
         log("[Network] Handler error\n  Command: %s\n  Remote: %s\n  Error:\n%s", Cmd.getName(command),

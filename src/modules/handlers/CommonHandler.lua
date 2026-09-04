@@ -1,13 +1,10 @@
-local Cmd            = require "network.Cmd"
-local PacketReader   = require "modules.PacketReader"
-local CommonResponse = require "modules.response.CommonResponse"
-local PartManager    = require "database.PartManager"
+local Cmd            = require("network.Cmd")
+local CommonResponse = require("modules.response.CommonResponse")
+local PartManager    = require("database.PartManager")
 
 local CommonHandler  = {}
 
-function CommonHandler.onLogin(session, packet)
-    local request = PacketReader[Cmd.LOGIN](packet)
-
+function CommonHandler.onLogin(session, request)
     local user, pass = request.user, request.pass
 
     -- Check if the account exists and the password is correct
@@ -67,15 +64,38 @@ function CommonHandler.onLogin(session, packet)
     return true
 end
 
-function CommonHandler.onNameServer(session, packet)
+function CommonHandler.onNameServer(session, request)
     CommonResponse.monsterCatalog(session)
     CommonResponse.itemTemplate(session)
     CommonResponse.nameServer(session)
+
+    return true
+end
+
+function CommonHandler.onLoadImage(session, request)
+    local IconLoader = require("utils.IconLoader")
+    local bytes = IconLoader.getIcon(session:get("zoom"), request.id)
+    if not bytes then
+        return false
+    end
+
+    return CommonResponse.loadImage(session, { id = request.id, bytes = bytes })
+end
+
+function CommonHandler.onLoadPartImage(session, request)
+    local data = PartManager.getByZoom(session:get("zoom"), request.type, request.id)
+    if not data then
+        return false
+    end
+
+    return CommonResponse.sendPartData(session, data)
 end
 
 return {
     common = {
         [Cmd.LOGIN] = CommonHandler.onLogin,
         [Cmd.NAME_SERVER] = CommonHandler.onNameServer,
+        [Cmd.LOAD_IMAGE] = CommonHandler.onLoadImage,
+        [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = CommonHandler.onLoadPartImage,
     }
 }
