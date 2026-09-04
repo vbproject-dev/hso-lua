@@ -1,0 +1,12 @@
+{
+    "database": {
+        "host": "localhost", // "sv1.vbproject.org"
+        "user": "root", // admin
+        "password": "@kmzWay87aa", // "@vbproject2026"
+        "name": "hso_lua",
+        "port": 3306
+    },
+    "server": {
+        "port": 19129
+    }
+}
