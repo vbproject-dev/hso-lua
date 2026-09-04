@@ -19,6 +19,29 @@ function Player:ctor(data)
     end
     self.inventory = ArrayList.new()
     self.bank = ArrayList.new()
+
+    self.online = false
+    self.session = nil
+end
+
+function Player:setSession(session)
+    self.session = session
+end
+
+function Player:getSession()
+    return self.session
+end
+
+function Player:setZone(zone)
+    self.zone = zone
+end
+
+function Player:getZone()
+    return self.zone
+end
+
+function Player:getMap()
+    return self.zone and self.zone.map or nil
 end
 
 function Player:toTable()
@@ -33,6 +56,12 @@ function Player:toTable()
         inventory = self.inventory:toTable(function(item) return item:toTable() end),
         bank = self.bank:toTable(function(item) return item:toTable() end),
     }
+end
+
+function Player:send(packet)
+    if self.session then
+        self.session:send(packet)
+    end
 end
 
 return Player

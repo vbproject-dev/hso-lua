@@ -5,6 +5,7 @@ local MySQL          = require("core.MySQL")
 local GameData       = require("database.GameData")
 local Equipment      = require("modules.game.items.Equipment")
 local Player         = require("modules.game.entities.Player")
+local GameWorld      = require("modules.game.world.GameWorld")
 local CommonHandler  = {}
 
 local BODY           = {}
@@ -207,8 +208,17 @@ function CommonHandler.onSelectChar(session, request)
         return CommonResponse.noticeBox(session, "Character does not belong to you")
     end
 
-    session:set("player", Player.new(character))
+    local player = Player.new(character)
+    session:set("player", player)
 
+    GameWorld.instance():registerPlayer(player, session)
+
+    local map = GameWorld.instance():getMap(player.location.map)
+    if not map then
+        return CommonResponse.noticeBox(session, "Map not found")
+    end
+
+    map:addPlayer(player, 0)
     -- CommonResponse.enterGame(session)
     return true
 end

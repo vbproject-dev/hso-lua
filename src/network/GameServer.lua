@@ -3,6 +3,7 @@ local MySQL           = require("core.MySQL")
 local Network         = require("network.Network")
 local HandlerRegistry = require("core.HandlerRegistry")
 local GameData        = require("database.GameData")
+local GameWorld       = require("modules.game.world.GameWorld")
 
 
 local GameServer          = class("GameServer")
@@ -12,15 +13,11 @@ local MYSQL_PING_INTERVAL = 60
 function GameServer:ctor()
     self.mysqlElapsed = 0
     self.network = Network.new(function(session)
-        -- local player = GameWorld.instance():getPlayerBySession(session)
-        -- if player then
-        --     local ParkService   = require("module.handler.park.ParkService")
-        --     local CommonService = require("module.handler.common.CommonService")
-
-        --     ParkService.leavePark(player)
-        --     GameWorld.instance():unregisterPlayer(player)
-        --     CommonService.save(player)
-        -- end
+        local player = GameWorld.instance():getPlayerBySession(session)
+        if player then
+            GameWorld.instance():unregisterPlayer(player)
+            -- Save Data
+        end
     end)
 end
 
@@ -43,6 +40,8 @@ function GameServer:init()
         return false
     end
 
+    GameWorld.instance():init()
+
     local modules = {
         { module = "modules.handlers.CommonHandler" },
     }
@@ -64,6 +63,8 @@ function GameServer:update(dt)
             self.db:ping()
         end
     end
+
+    GameWorld.instance():update(dt)
 end
 
 return GameServer
