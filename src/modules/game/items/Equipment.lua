@@ -8,7 +8,10 @@ function Equipment:ctor(data)
     self.info = GameData.getEquipment(self.id)
     self.options = data.options or ArrayList.new(self.info.option)
     self.plus = data.plus or 0
+    self.slot = data.slot
     self.color = data.color or self.info.color
+    self.lock = data.lock or false
+    self.expired = data.expired or -1
 end
 
 function Equipment:toWearingTable()
@@ -16,6 +19,9 @@ function Equipment:toWearingTable()
         id = self.id,
         plus = self.plus,
         color = self.color,
+        lock = self.lock,
+        slot = self.slot,
+        expired = self.expired,
         options = self.options:toTable()
     }
 end
@@ -26,7 +32,9 @@ function Equipment:toInventoryTable()
         id = self.id,
         quantity = self.quantity,
         plus = self.plus,
+        lock = self.lock,
         color = self.color,
+        expired = self.expired,
         options = self.options:toTable()
     }
 end

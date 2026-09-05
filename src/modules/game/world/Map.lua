@@ -137,4 +137,63 @@ function Map:update(dt)
     end)
 end
 
+function Map:toBytes()
+    local packet = Packet.new()
+
+    packet:writeShort(self.miniMap)
+    packet:writeUTF(self.name)
+
+    local tileBytes = function()
+        local packet = Packet.new()
+        packet:writeByte(self.tileData.width)
+        packet:writeByte(self.tileData.height)
+        packet:writeByte(self.tileData.imageId)
+        packet:writeBytes(self.tileData.data)
+        return packet:getData()
+    end
+
+    -- Tile Data
+    local tiles = tileBytes()
+
+    packet:writeShort(#tiles)
+    if #tiles > 0 then
+        packet:writeBytes(tiles)
+    end
+
+    -- Background
+    packet:writeByte(self.bgType)
+    if self.bgType >= 0 then
+        packet:writeShort(self.bgHeight)
+    end
+
+    local itemBytes = function()
+        local packet = Packet.new()
+        packet:writeShort(self.itemMap:size())
+        self.itemMap:forEach(function(item)
+            packet:writeShort(item.id)
+            packet:writeShort(item.x)
+            packet:writeShort(item.y)
+        end)
+        return packet:getData()
+    end
+
+    -- Item Map
+    local itemMapData = itemBytes()
+
+    packet:writeShort(#itemMapData)
+    if #itemMapData > 0 then
+        packet:writeBytes(itemMapData)
+    end
+
+    -- Warp Point
+    packet:writeByte(self.warps:size())
+    self.warps:forEach(function(point)
+        packet:writeShort(point.x)
+        packet:writeShort(point.y)
+        packet:writeUTF(point.name)
+    end)
+
+    return packet:getData()
+end
+
 return Map

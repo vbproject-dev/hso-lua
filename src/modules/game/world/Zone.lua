@@ -57,6 +57,7 @@ function Zone:addPlayer(player)
         self.players:add(player)
     end
 
+    self:onPlayerJoin(player)
     return true
 end
 
@@ -70,6 +71,7 @@ function Zone:removePlayer(player)
     self.players:remove(player)
     player:setZone(nil)
 
+    self:onPlayerLeave(player)
     return true
 end
 
@@ -135,6 +137,18 @@ function Zone:getStatusArea()
     end
 
     return 2
+end
+
+function Zone:onPlayerJoin(player)
+    self:forEachPlayer(function(other)
+        -- notify other
+    end, player)
+end
+
+function Zone:onPlayerLeave(player)
+    self:forEachPlayer(function(other)
+        -- notify other
+    end, player)
 end
 
 return Zone

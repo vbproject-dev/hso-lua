@@ -20,6 +20,12 @@ function Player:ctor(data)
     self.inventory = ArrayList.new()
     self.bank = ArrayList.new()
 
+    -- Stats
+    self.hp = 0
+    self.maxHp = 0
+    self.mp = 0
+    self.maxMp = 0
+
     self.online = false
     self.session = nil
 end

@@ -63,4 +63,8 @@ function GameData.getSkill(id)
     return GameData.skills:findFirst(function(data) return data.id == id end)
 end
 
+function GameData.getOption(id)
+    return GameData.options:findFirst(function(data) return data.id == id end)
+end
+
 return GameData

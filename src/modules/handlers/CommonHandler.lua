@@ -74,8 +74,7 @@ function CommonHandler.onLogin(session, request)
         return false
     end
 
-    CommonResponse.selectCharacter(session)
-    return true
+    return CommonResponse.selectCharacter(session)
 end
 
 function CommonHandler.onNameServer(session, request)
@@ -175,14 +174,18 @@ function CommonHandler.onCreateChar(session, request)
         bag = "[]",
         bank = "[]",
         location = JSON.fromTable({ map = 0, x = 132, y = 132 }),
+        rms = "[]",
         info = JSON.fromTable({
             head = request.head,
             eye = request.eye,
             hair = request.hair,
-            str = 4,
-            dex = 4,
-            vit = 4,
-            int = 4,
+            str = 5,
+            dex = 5,
+            vit = 5,
+            int = 5,
+            skill = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            skill_point = 0,
+            potential_point = 0,
         })
     })
 
@@ -219,6 +222,13 @@ function CommonHandler.onSelectChar(session, request)
     end
 
     map:addPlayer(player, 0)
+
+    CommonResponse.fillRectUpdate(session, 3)
+    CommonResponse.mainCharInfo(session)
+    CommonResponse.sendBytes(session, Cmd.LOGIN, FileUtils.readBytes("msg/table_map"))
+    CommonResponse.changeMap(session)
+
+
     -- CommonResponse.enterGame(session)
     return true
 end

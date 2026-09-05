@@ -3,6 +3,14 @@ local GameData       = require("database.GameData")
 local Player         = require("modules.game.entities.Player")
 local CommonResponse = {}
 
+function CommonResponse.sendBytes(session, cmd, bytes)
+    return try(function()
+        local packet = Packet.new(cmd)
+        packet:writeBytes(bytes)
+        session:send(packet)
+    end)
+end
+
 function CommonResponse.loginFail(session, text)
     return try(function()
         local packet = Packet.new(Cmd.LOGIN_FAIL)
@@ -232,6 +240,111 @@ function CommonResponse.loadImage(session, data)
         packet:writeShort(data.id)
         packet:writeBytes(data.bytes)
         session:send(packet)
+    end)
+end
+
+function CommonResponse.fillRectUpdate(session, type)
+    return try(function()
+        local packet = Packet.new(Cmd.FILL_REC_UPDATE_TIME)
+        packet:writeByte(type)
+        if type == 3 or type == 5 then
+            packet:writeByte(0)
+        end
+        session:send(packet)
+    end)
+end
+
+function CommonResponse.mainCharInfo(session)
+    return try(function()
+        local player = session:get("player")
+        if not player then return end
+
+        local packet = Packet.new(Cmd.MAIN_CHAR_INFO)
+
+        packet:writeShort(player.id)
+        packet:writeUTF(player.name)
+        packet:writeInt(player.hp)
+        packet:writeInt(player.maxHp)
+        packet:writeInt(player.mp)
+        packet:writeInt(player.maxMp)
+        packet:writeByte(player.info.head)
+        packet:writeByte(player.class)
+        packet:writeByte(player.info.eye)
+        packet:writeByte(player.info.hair)
+
+        local attr = { 0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 28, 33, 34, 35, 36, 40, 29, 30, 31, 32, 181 }
+
+        packet:writeByte(#attr)
+        for _, value in ipairs(attr) do
+            packet:writeByte(value)
+            packet:writeInt(0)
+        end
+
+        packet:writeShort(player.level)
+        packet:writeShort(0) -- EXP PERCENT
+        packet:writeShort(player.info.potential_point)
+        packet:writeShort(player.info.skill_point)
+
+        -- Bonus STATS
+        packet:writeShort(0)
+        packet:writeShort(0)
+        packet:writeShort(0)
+        packet:writeShort(0)
+
+        -- Skill lv
+        for __, id in ipairs(player.info.skill) do
+            packet:writeByte(id)
+        end
+
+        -- Bonus skill lv
+        for __, id in ipairs(player.info.skill) do
+            packet:writeByte(0)
+        end
+
+        -- Guild
+        packet:writeShort(-1)
+
+        -- Fashion
+        local fashion = { -1, -1, -1, -1, -1, -1, -1 }
+        packet:writeByte(#fashion)
+        for _, id in ipairs(fashion) do
+            packet:writeShort(id)
+        end
+
+        packet:writeByte(0)
+        packet:writeShort(-1)
+        packet:writeByte(1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+        packet:writeShort(-1)
+
+        session:send(packet)
+    end)
+end
+
+function CommonResponse.changeMap(session)
+    return try(function()
+        local player = session:get("player")
+        if not player then return end
+        local map = player:getMap()
+        local packet = Packet.new(Cmd.CHANGE_MAP)
+        packet:writeShort(map.id)
+        packet:writeShort(player.location.x / 24)
+        packet:writeShort(player.location.y / 24)
+
+        packet:writeBytes(player:getMap():toBytes())
+
+        packet:writeByte(0)
+        packet:writeByte(player.zone.id)
+        packet:writeByte(map.type)
+        packet:writeBoolean(map.isCity)
+        packet:writeBoolean(map.isShowHs)
     end)
 end
 

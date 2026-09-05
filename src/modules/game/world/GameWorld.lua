@@ -32,6 +32,15 @@ function GameWorld:init()
     log("[GameWorld] Initialized %d maps with %d total zones.", self.mapList:size(), totalZones)
 end
 
+function GameWorld:joinMap(player, mapId, zoneId)
+    local map = self:getMap(mapId)
+    if not map then
+        return false
+    end
+
+    return map:addPlayer(player, zoneId)
+end
+
 function GameWorld:getMap(mapId)
     return self.mapList:findFirst(function(map)
         return map.id == mapId
