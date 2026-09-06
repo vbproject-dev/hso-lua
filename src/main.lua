@@ -1,6 +1,6 @@
 require "core.Class"
 require "core.Logger"
-require "core.GameConstants"
+require "core.Constants"
 local GameServer = require "network.GameServer"
 
 local Main = class("Main")

@@ -6,17 +6,17 @@ function CharacterWritter.selectCharacter(session)
     return try(function()
         local account = session:get("account")
 
-        local db = require("core.MySQL").instance()
-        local charactersData, err = db:from("player"):where("account_id", account.id):getAll()
+
+        local charactersData, err = loadTable("player", { account_id = account.id })
 
         if err then
             log("Failed to get characters: " .. tostring(err))
             return false
         end
-        local characters = ArrayList.new()
-        for __, data in ipairs(charactersData) do
-            characters:add(Player.new(data))
-        end
+
+        local characters = charactersData:map(function(data)
+            return Player.new(data)
+        end)
 
         local packet = Packet.new(Cmd.SELECT_CHAR)
 

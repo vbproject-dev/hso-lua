@@ -16,7 +16,10 @@ function GameServer:ctor()
         local player = GameWorld.instance():getPlayerBySession(session)
         if player then
             GameWorld.instance():unregisterPlayer(player)
-            -- Save Data
+            local saved, err = updateTable("player", player:toTable(), { id = player.id })
+            if err then
+                log("[MySQL] Failed to update player %s, %s", player.name, err)
+            end
         end
     end)
 end

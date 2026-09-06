@@ -2,7 +2,6 @@ local Cmd              = require "network.Cmd"
 local CommonWritter    = require "modules.writters.CommonWritter"
 local GameData         = require "database.GameData"
 local Equipment        = require "modules.game.items.Equipment"
-local MySQL            = require "core.MySQL"
 local GameWorld        = require "modules.game.world.GameWorld"
 local Player           = require "modules.game.entities.Player"
 local InventoryManager = require "modules.game.inventory.InventoryManager"
@@ -59,15 +58,15 @@ function CharacterHandler.onCreateChar(session, request)
     end
 
     -- Create the character
-    local db = MySQL.instance()
+
     local account = session:get("account")
 
-    local char, err = db:from("player"):where("name", request.name):getFirst()
+    local char, err = findTable("player", { name = request.name })
     if char then
         return CommonWritter.noticeBox(session, "Character name already exists")
     end
 
-    local result, err = db:from("player"):insert({
+    local result, err = insertTable("player", {
         name = request.name:lower(),
         account_id = account.id,
         class = request.class,
@@ -76,7 +75,7 @@ function CharacterHandler.onCreateChar(session, request)
         gold = 1000,
         gem = 100,
         wearing = JSON.fromTable(wearing:toTable()),
-        bag = "[]",
+        inventory = "[]",
         bank = "[]",
         location = JSON.fromTable({ map = 0, x = 132, y = 132 }),
         rms = "[[],[]]",
@@ -89,8 +88,8 @@ function CharacterHandler.onCreateChar(session, request)
             vit = 5,
             int = 5,
             skill = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            skill_point = 0,
-            potential_point = 0,
+            skillPoint = 0,
+            potentialPoint = 0,
         })
     })
 
@@ -104,10 +103,9 @@ function CharacterHandler.onCreateChar(session, request)
 end
 
 function CharacterHandler.onSelectChar(session, request)
-    local db = MySQL.instance()
     local account = session:get("account")
 
-    local character, err = db:from("player"):where("id", request.id):getFirst()
+    local character, err = findTable("player", { id = request.id })
     if not character then
         return CommonWritter.noticeBox(session, "Character not found")
     end

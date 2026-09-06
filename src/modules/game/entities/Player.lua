@@ -2,6 +2,7 @@ local BaseObject = require("modules.game.entities.BaseObject")
 local Equipment = require("modules.game.items.Equipment")
 local Inventory = require("modules.game.inventory.Inventory")
 local EquipType = require("modules.game.items.EquipType")
+local CommonWritter = require("modules.writters.CommonWritter")
 
 local Player = class("Player", BaseObject)
 
@@ -60,6 +61,9 @@ end
 
 function Player:setZone(zone)
     self.zone = zone
+    if zone then
+        self.mapId = self.zone:getMap().id
+    end
 end
 
 function Player:getZone()
@@ -72,15 +76,25 @@ end
 
 function Player:wear(item, slot)
     if slot and not EquipType.isValid(slot, item.info.type) then
-        return nil
+        return CommonWritter.noticeBox(self.session, "Invalid equipment slot")
     end
 
     slot = slot or EquipType.getAvailableSlot(item.info.type, self.wearing)
-    if not slot then return nil end
+    if not slot then
+        return CommonWritter.noticeBox(self.session, "Invalid equipment type")
+    end
 
     local old = self.wearing:get(slot)
+
+    if old and self.inventory:isFull() then
+        return CommonWritter.noticeBox(self.session, "Inventory is full")
+    end
+
+    self.inventory:remove(item)
+    if old then self.inventory:add(old) end
     self.wearing:set(slot, item)
-    return old
+
+    return true
 end
 
 function Player:unwear(slot)
@@ -106,10 +120,23 @@ function Player:toTable()
         exp = self.exp,
         gold = self.gold,
         gem = self.gem,
-        info = self.info,
-        wearing = self.wearing:toTable(function(item) return item:toTable() end),
-        inventory = self.inventory:toTable(),
-        bank = self.bank:toTable(),
+        location = JSON.fromTable({
+            x = self.x,
+            y = self.y,
+            map = self.mapId
+        }),
+        info = JSON.fromTable(self.info),
+        rms = JSON.fromTable(self.rms),
+
+        -- Filter only non null value
+        wearing = JSON.fromTable(self.wearing:filter(function(item)
+            return item ~= nil
+        end):toTable(function(item)
+            return item:toWearingTable()
+        end)),
+
+        inventory = self.inventory:toJson(),
+        bank = self.bank:toJson()
     }
 end
 

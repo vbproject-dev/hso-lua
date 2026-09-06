@@ -109,11 +109,16 @@ end
 
 function Inventory:toTable()
     return self.data:toTable(function(item)
-        if item.category == 3 then
+        if iskindof(item, "Equipment") then
             return item:toInventoryTable()
+        else
+            return item:toTable()
         end
-        return item:toTable()
     end)
+end
+
+function Inventory:toJson()
+    return JSON.fromTable(self:toTable())
 end
 
 function Inventory:all()

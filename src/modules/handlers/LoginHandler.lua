@@ -1,5 +1,4 @@
 local CommonWritter    = require "modules.writters.CommonWritter"
-local MySQL            = require "core.MySQL"
 local PartManager      = require "database.PartManager"
 local Cmd              = require "network.Cmd"
 local LoginWritter     = require "modules.writters.LoginWritter"
@@ -11,9 +10,7 @@ function LoginHandler.onLogin(session, request)
 
     -- Check if the account exists and the password is correct
 
-
-    local db = MySQL.instance()
-    local account, err = db:from("account"):where("username", user):getFirst()
+    local account, err = findTable("account", { username = user })
 
     if not account then
         return LoginWritter.loginFail(session, "Account not found")
@@ -48,10 +45,10 @@ function LoginHandler.onLogin(session, request)
     -- Update the last login and the IP address of the account
     account.ip_address = session:getRemoteAddress():match("^(.-):%d+$")
     account.last_login = os.date("%Y-%m-%d %H:%M:%S")
-    local result, err = db:from("account"):where("id", account.id):update({
+    local result, err = updateTable("account", {
         ip_address = account.ip_address,
         last_login = account.last_login
-    })
+    }, { id = account.id })
 
     if not result then
         log("Failed to update account: %s" .. tostring(err))
