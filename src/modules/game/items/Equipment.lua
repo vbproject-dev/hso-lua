@@ -9,7 +9,6 @@ function Equipment:ctor(data)
     self.info = GameData.getEquipment(self.id)
     self.options = ArrayList.new(data.options or self.info.option)
     self.plus = data.plus or 0
-    self.slot = EquipType[self.info.type][1]
     self.color = data.color or self.info.color
     self.lock = data.lock or false
     self.expired = data.expired or 0

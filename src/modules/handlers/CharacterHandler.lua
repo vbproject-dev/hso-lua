@@ -100,7 +100,7 @@ function CharacterHandler.onCreateChar(session, request)
     end
 
 
-    return CommonWritter.selectCharacter(session)
+    return CharacterWritter.selectCharacter(session)
 end
 
 function CharacterHandler.onSelectChar(session, request)

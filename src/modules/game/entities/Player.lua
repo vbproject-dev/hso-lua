@@ -22,21 +22,20 @@ function Player:ctor(data)
         self.wearing:add(nil)
     end
 
-    for __, itemData in pairs(data.wearing or {}) do
+    for _, itemData in pairs(data.wearing or {}) do
         local item = Equipment.create(itemData)
         if item then
-            local slot = self:getAvailableSlotForType(item)
+            local slot = EquipType.getAvailableSlot(item.info.type, self.wearing)
             if slot then
-                item.slot = slot
                 self.wearing:set(slot, item)
             end
         end
     end
 
-    local count = self.wearing:reduce(0, function(count, item)
-        return count + (item and 1 or 0)
-    end)
-    log("wearing size %s", count)
+    -- local count = self.wearing:reduce(0, function(count, item)
+    --     return count + (item and 1 or 0)
+    -- end)
+    -- log("wearing size %s", count)
 
     self.inventory = Inventory.new(data.bag or {})
     self.bank = Inventory.new(data.bank or {})
@@ -71,23 +70,16 @@ function Player:getMap()
     return self.zone and self.zone.map or nil
 end
 
-function Player:wear(item)
-    local slots = EquipType[item.info.type]
-    if not slots then return nil end
-
-    local slot = slots[1]
-
-    for _, candidate in ipairs(slots) do
-        if not self.wearing:get(candidate) then
-            slot = candidate
-            break
-        end
+function Player:wear(item, slot)
+    if slot and not EquipType.isValid(slot, item.info.type) then
+        return nil
     end
 
-    local old = self.wearing:get(slot)
-    item.slot = slot
-    self.wearing:set(slot, item)
+    slot = slot or EquipType.getAvailableSlot(item.info.type, self.wearing)
+    if not slot then return nil end
 
+    local old = self.wearing:get(slot)
+    self.wearing:set(slot, item)
     return old
 end
 
@@ -100,21 +92,11 @@ function Player:unwear(slot)
 end
 
 function Player:getWearing(slot)
-    local item = self.wearing:get(slot)
-    return item
+    return self.wearing:get(slot)
 end
 
-function Player:getAvailableSlotForType(item)
-    local slots = EquipType[item.info.type]
-    if not slots then return nil end
-
-    for _, slot in ipairs(slots) do
-        if not self.wearing:get(slot) then
-            return slot
-        end
-    end
-
-    return nil
+function Player:isSlotEmpty(slot)
+    return not self.wearing:get(slot)
 end
 
 function Player:toTable()
