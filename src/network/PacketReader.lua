@@ -51,10 +51,24 @@ function PacketReader.onSelectChar(packet)
     }
 end
 
+function PacketReader.onSaveRmsServer(packet)
+    local type = packet:readByte()
+    local id = packet:readByte()
+    local size = packet:readShort()
+
+    return {
+        type = type,
+        id = id,
+        size = size,
+        data = size > 0 and packet:readBytes(size) or nil
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
     [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = PacketReader.onLoadPartImage,
     [Cmd.CREATE_CHAR] = PacketReader.onCreateChar,
     [Cmd.SELECT_CHAR] = PacketReader.onSelectChar,
+    [Cmd.SAVE_RMS_SERVER] = PacketReader.onSaveRmsServer,
 }

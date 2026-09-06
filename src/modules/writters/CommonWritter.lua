@@ -1,9 +1,9 @@
-local Cmd            = require("network.Cmd")
-local GameData       = require("database.GameData")
-local Player         = require("modules.game.entities.Player")
-local CommonResponse = {}
+local Cmd           = require("network.Cmd")
+local GameData      = require("database.GameData")
+local Player        = require("modules.game.entities.Player")
+local CommonWritter = {}
 
-function CommonResponse.sendBytes(session, cmd, bytes)
+function CommonWritter.sendBytes(session, cmd, bytes)
     return try(function()
         local packet = Packet.new(cmd)
         packet:writeBytes(bytes)
@@ -11,7 +11,7 @@ function CommonResponse.sendBytes(session, cmd, bytes)
     end)
 end
 
-function CommonResponse.loginFail(session, text)
+function CommonWritter.loginFail(session, text)
     return try(function()
         local packet = Packet.new(Cmd.LOGIN_FAIL)
         packet:writeUTF(text)
@@ -20,7 +20,7 @@ function CommonResponse.loginFail(session, text)
     end)
 end
 
-function CommonResponse.noticeBox(session, text)
+function CommonWritter.noticeBox(session, text)
     return try(function()
         local packet = Packet.new(Cmd.NOTICE_BOX)
         packet:writeUTF(text)
@@ -30,7 +30,7 @@ function CommonResponse.noticeBox(session, text)
     end)
 end
 
-function CommonResponse.saveLogin(session, user, pass)
+function CommonWritter.saveLogin(session, user, pass)
     return try(function()
         local packet = Packet.new(31)
         packet:writeUTF(user)
@@ -39,7 +39,7 @@ function CommonResponse.saveLogin(session, user, pass)
     end)
 end
 
-function CommonResponse.updateData(session, count, size)
+function CommonWritter.updateData(session, count, size)
     return try(function()
         local packet = Packet.new(Cmd.UPDATE_DATA)
         packet:writeShort(count)
@@ -48,7 +48,7 @@ function CommonResponse.updateData(session, count, size)
     end)
 end
 
-function CommonResponse.sendPartData(session, data)
+function CommonWritter.sendPartData(session, data)
     return try(function()
         local packet = Packet.new(-52)
         packet:writeByte(data.type)
@@ -60,7 +60,7 @@ function CommonResponse.sendPartData(session, data)
     end)
 end
 
-function CommonResponse.selectCharacter(session)
+function CommonWritter.selectCharacter(session)
     return try(function()
         local account = session:get("account")
 
@@ -87,8 +87,9 @@ function CommonResponse.selectCharacter(session)
             packet:writeByte(player.info.hair)
             packet:writeByte(player.info.eye)
 
-            packet:writeByte(player.wearing:size())
-            player.wearing:forEach(function(item)
+            local wearing = player.wearing:filter(function(item) return item ~= nil end)
+            packet:writeByte(wearing:size())
+            wearing:forEach(function(item)
                 packet:writeByte(item.info.type)
                 packet:writeByte(item.info.part)
             end)
@@ -105,7 +106,7 @@ function CommonResponse.selectCharacter(session)
     end)
 end
 
-function CommonResponse.monsterCatalog(session)
+function CommonWritter.monsterCatalog(session)
     return try(function()
         local packet = Packet.new(Cmd.CATALOG_MONSTER)
         packet:writeShort(GameData.monsters:size())
@@ -129,7 +130,7 @@ function CommonResponse.monsterCatalog(session)
     end)
 end
 
-function CommonResponse.itemTemplate(session)
+function CommonWritter.itemTemplate(session)
     return try(function()
         local packet = Packet.new(Cmd.ITEM_TEMPLATE)
 
@@ -202,7 +203,7 @@ function CommonResponse.itemTemplate(session)
     end)
 end
 
-function CommonResponse.nameServer(session)
+function CommonWritter.nameServer(session)
     return try(function()
         local packet = Packet.new(Cmd.NAME_SERVER)
 
@@ -234,7 +235,7 @@ function CommonResponse.nameServer(session)
     end)
 end
 
-function CommonResponse.loadImage(session, data)
+function CommonWritter.loadImage(session, data)
     return try(function()
         local packet = Packet.new(Cmd.LOAD_IMAGE)
         packet:writeShort(data.id)
@@ -243,7 +244,7 @@ function CommonResponse.loadImage(session, data)
     end)
 end
 
-function CommonResponse.fillRectUpdate(session, type)
+function CommonWritter.fillRectUpdate(session, type)
     return try(function()
         local packet = Packet.new(Cmd.FILL_REC_UPDATE_TIME)
         packet:writeByte(type)
@@ -254,11 +255,9 @@ function CommonResponse.fillRectUpdate(session, type)
     end)
 end
 
-function CommonResponse.mainCharInfo(session)
+function CommonWritter.mainCharInfo(player)
+    if not player then return false end
     return try(function()
-        local player = session:get("player")
-        if not player then return end
-
         local packet = Packet.new(Cmd.MAIN_CHAR_INFO)
 
         packet:writeShort(player.id)
@@ -285,6 +284,12 @@ function CommonResponse.mainCharInfo(session)
         packet:writeShort(player.info.potential_point)
         packet:writeShort(player.info.skill_point)
 
+        -- STATS
+        packet:writeShort(0)
+        packet:writeShort(0)
+        packet:writeShort(0)
+        packet:writeShort(0)
+
         -- Bonus STATS
         packet:writeShort(0)
         packet:writeShort(0)
@@ -301,19 +306,26 @@ function CommonResponse.mainCharInfo(session)
             packet:writeByte(0)
         end
 
+        packet:writeByte(0)   -- TypePK
+        packet:writeShort(0)  -- Point PK
+        packet:writeByte(126) -- MaxBag
+
         -- Guild
         packet:writeShort(-1)
 
+        packet:writeUTF("A2")
+        packet:writeLong(0)
+
         -- Fashion
-        local fashion = { -1, -1, -1, -1, -1, -1, -1 }
-        packet:writeByte(#fashion)
-        for _, id in ipairs(fashion) do
+        packet:writeByte(player.fashion:size())
+        player.fashion:forEach(function(id)
             packet:writeShort(id)
-        end
+        end)
 
         packet:writeByte(0)
         packet:writeShort(-1)
         packet:writeByte(1)
+
         packet:writeShort(-1)
         packet:writeShort(-1)
         packet:writeShort(-1)
@@ -324,14 +336,14 @@ function CommonResponse.mainCharInfo(session)
         packet:writeShort(-1)
         packet:writeShort(-1)
 
-        session:send(packet)
+        player:send(packet)
     end)
 end
 
-function CommonResponse.changeMap(session)
+function CommonWritter.changeMap(player)
+    if not player then return false end
+
     return try(function()
-        local player = session:get("player")
-        if not player then return end
         local map = player:getMap()
         local packet = Packet.new(Cmd.CHANGE_MAP)
         packet:writeShort(map.id)
@@ -345,7 +357,126 @@ function CommonResponse.changeMap(session)
         packet:writeByte(map.type)
         packet:writeBoolean(map.isCity)
         packet:writeBoolean(map.isShowHs)
+
+        player:send(packet)
     end)
 end
 
-return CommonResponse
+function CommonWritter.listSkill(session)
+    local player = session:get("player")
+    if not player then
+        return false
+    end
+
+    local skills = GameData.getSkills(player.class)
+
+    if not skills then
+        log("Not found skills for class: " .. player.class)
+        return false
+    end
+
+    return try(function()
+        local packet = Packet.new(Cmd.LIST_SKILL)
+        packet:writeByte(skills:size())
+
+        skills:forEach(function(skill)
+            packet:writeByte(skill.sid)
+            packet:writeByte(skill.icon_id)
+            packet:writeUTF(skill.name)
+            packet:writeByte(skill.type)
+            packet:writeShort(skill.attack_range)
+            packet:writeUTF(skill.description)
+            packet:writeByte(skill.buff_type)
+            packet:writeByte(skill.sub_effect_type)
+            packet:writeByte(#skill.levels)
+            for _, lv in ipairs(skill.levels) do
+                packet:writeShort(lv.mpCost)
+                packet:writeShort(lv.requiredLevel)
+                packet:writeInt(lv.cooldown)
+                packet:writeInt(lv.buffDuration)
+                packet:writeByte(lv.subEffectPercent)
+                packet:writeShort(lv.subEffectDuration)
+                packet:writeShort(lv.bonusHp)
+                packet:writeShort(lv.bonusMp)
+
+                packet:writeByte(#lv.options)
+                for _, op in ipairs(lv.options) do
+                    packet:writeByte(op.id)
+                    packet:writeInt(op.value)
+                end
+
+                packet:writeByte(lv.targetCount)
+                packet:writeShort(lv.castRange)
+            end
+
+            packet:writeShort(skill.performDuration)
+            packet:writeByte(skill.paintType)
+        end)
+
+        session:send(packet)
+    end)
+end
+
+function CommonWritter:loginRms(player)
+    if not player then return false end
+
+    local data = player.rms
+    return try(function()
+        local packet = Packet.new(55)
+        packet:writeByte(1)
+        packet:writeShort(2)
+        packet:writeByte(-1)
+        packet:writeByte(0)
+        player:send(packet)
+
+        packet = Packet.new(55)
+        packet:writeByte(2)
+
+        if player:getMap().id == 0 and player.level < 2 then
+            packet:writeShort(0)
+        else
+            packet:writeShort(1)
+            packet:writeByte(0)
+        end
+        player:send(packet)
+
+        if #data[1] > 0 then
+            local bytes = string.char(table.unpack(data[1]))
+            packet = Packet.new(55)
+            packet:writeByte(0)
+            packet:writeShort(#data[1])
+            packet:writeBytes(bytes)
+            player:send(packet)
+        end
+
+        if #data[2] > 0 then
+            local bytes = string.char(table.unpack(data[2]))
+            packet = Packet.new(55)
+            packet:writeByte(3)
+            packet:writeShort(#data[2])
+            packet:writeBytes(bytes)
+            player:send(packet)
+        end
+    end)
+end
+
+function CommonWritter.updateHealth(player)
+    return try(function()
+        local packet = Packet.new(Cmd.PLAYER_SUCKHOE)
+        packet:writeInt(32000) -- Stamina Points
+        packet:writeInt(0)     -- Arena Points
+        player:send(packet)
+    end)
+end
+
+function CommonWritter.sendQuest(player)
+    return try(function()
+        local packet = Packet.new(Cmd.QUEST)
+        packet:writeByte(10)
+        packet:writeByte(10)
+        packet:writeByte(10)
+        player:send(packet)
+    end)
+end
+
+return CommonWritter

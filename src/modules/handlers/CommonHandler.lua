@@ -1,14 +1,15 @@
-local Cmd            = require("network.Cmd")
-local CommonResponse = require("modules.response.CommonResponse")
-local PartManager    = require("database.PartManager")
-local MySQL          = require("core.MySQL")
-local GameData       = require("database.GameData")
-local Equipment      = require("modules.game.items.Equipment")
-local Player         = require("modules.game.entities.Player")
-local GameWorld      = require("modules.game.world.GameWorld")
-local CommonHandler  = {}
+local Cmd              = require("network.Cmd")
+local CommonWritter    = require("modules.writters.CommonWritter")
+local PartManager      = require("database.PartManager")
+local MySQL            = require("core.MySQL")
+local GameData         = require("database.GameData")
+local Equipment        = require("modules.game.items.Equipment")
+local Player           = require("modules.game.entities.Player")
+local GameWorld        = require("modules.game.world.GameWorld")
+local InventoryManager = require("modules.game.inventory.InventoryManager")
+local CommonHandler    = {}
 
-local BODY           = {}
+local BODY             = {}
 
 function CommonHandler.onLogin(session, request)
     local user, pass = request.user, request.pass
@@ -20,15 +21,15 @@ function CommonHandler.onLogin(session, request)
     local account, err = db:from("account"):where("username", user):getFirst()
 
     if not account then
-        return CommonResponse.loginFail(session, "Account not found")
+        return CommonWritter.loginFail(session, "Account not found")
     end
 
     local Md5 = require("utils.Md5")
     if not Md5.verifyMD5(pass, account.password) then
-        return CommonResponse.loginFail(session, "Incorrect password")
+        return CommonWritter.loginFail(session, "Incorrect password")
     end
 
-    CommonResponse.saveLogin(session, user, pass)
+    CommonWritter.saveLogin(session, user, pass)
 
     -- Check if the client need to receive an update
     local count = PartManager.getPartCount(request.zoom)
@@ -37,12 +38,12 @@ function CommonHandler.onLogin(session, request)
             return part.type ~= 113
         end)
 
-        if not CommonResponse.updateData(session, count, parts:size()) then
+        if not CommonWritter.updateData(session, count, parts:size()) then
             return false
         end
 
         parts:forEach(function(part)
-            if not CommonResponse.sendPartData(session, part) then
+            if not CommonWritter.sendPartData(session, part) then
                 return false
             end
         end)
@@ -66,21 +67,14 @@ function CommonHandler.onLogin(session, request)
     session:set("zoom", request.zoom)
     session:set("account", account)
 
-    -- Get the characters associated to the account
-    local characters, err = db:from("player"):where("account_id", account.id):getAll()
-
-    if err then
-        log("Failed to get characters: " .. tostring(err))
-        return false
-    end
-
-    return CommonResponse.selectCharacter(session)
+    log("Zoom %s", tostring(session:get("zoom")))
+    return CommonWritter.selectCharacter(session)
 end
 
 function CommonHandler.onNameServer(session, request)
-    CommonResponse.monsterCatalog(session)
-    CommonResponse.itemTemplate(session)
-    CommonResponse.nameServer(session)
+    CommonWritter.monsterCatalog(session)
+    CommonWritter.itemTemplate(session)
+    CommonWritter.nameServer(session)
 
     return true
 end
@@ -92,7 +86,7 @@ function CommonHandler.onLoadImage(session, request)
         return false
     end
 
-    return CommonResponse.loadImage(session, { id = request.id, bytes = bytes })
+    return CommonWritter.loadImage(session, { id = request.id, bytes = bytes })
 end
 
 function CommonHandler.onLoadPartImage(session, request)
@@ -101,16 +95,16 @@ function CommonHandler.onLoadPartImage(session, request)
         return false
     end
 
-    return CommonResponse.sendPartData(session, data)
+    return CommonWritter.sendPartData(session, data)
 end
 
 function CommonHandler.onCreateChar(session, request)
     if #request.name < 4 or #request.name > 15 then
-        return CommonResponse.noticeBox(session, "Name must be between 4 and 15 characters")
+        return CommonWritter.noticeBox(session, "Name must be between 4 and 15 characters")
     end
 
     if request.class < 0 or request.class > 3 then
-        return CommonResponse.noticeBox(session, "Invalid class")
+        return CommonWritter.noticeBox(session, "Invalid class")
     end
 
     -- Validation data
@@ -133,15 +127,15 @@ function CommonHandler.onCreateChar(session, request)
     end
 
     if not contains(HEAD, request.head) then
-        return CommonResponse.noticeBox(session, "Invalid head")
+        return CommonWritter.noticeBox(session, "Invalid head")
     end
 
     if not contains(EYE, request.eye) then
-        return CommonResponse.noticeBox(session, "Invalid eye")
+        return CommonWritter.noticeBox(session, "Invalid eye")
     end
 
     if not contains(HAIR, request.hair) then
-        return CommonResponse.noticeBox(session, "Invalid hair")
+        return CommonWritter.noticeBox(session, "Invalid hair")
     end
 
     -- Prepare the equipment
@@ -159,7 +153,7 @@ function CommonHandler.onCreateChar(session, request)
 
     local char, err = db:from("player"):where("name", request.name):getFirst()
     if char then
-        return CommonResponse.noticeBox(session, "Character name already exists")
+        return CommonWritter.noticeBox(session, "Character name already exists")
     end
 
     local result, err = db:from("player"):insert({
@@ -191,11 +185,11 @@ function CommonHandler.onCreateChar(session, request)
 
     if not result then
         log("Failed to create character: " .. tostring(err))
-        return CommonResponse.noticeBox(session, "Failed to create character")
+        return CommonWritter.noticeBox(session, "Failed to create character")
     end
 
 
-    return CommonResponse.selectCharacter(session)
+    return CommonWritter.selectCharacter(session)
 end
 
 function CommonHandler.onSelectChar(session, request)
@@ -204,11 +198,11 @@ function CommonHandler.onSelectChar(session, request)
 
     local character, err = db:from("player"):where("id", request.id):getFirst()
     if not character then
-        return CommonResponse.noticeBox(session, "Character not found")
+        return CommonWritter.noticeBox(session, "Character not found")
     end
 
     if character.account_id ~= account.id then
-        return CommonResponse.noticeBox(session, "Character does not belong to you")
+        return CommonWritter.noticeBox(session, "Character does not belong to you")
     end
 
     local player = Player.new(character)
@@ -216,21 +210,46 @@ function CommonHandler.onSelectChar(session, request)
 
     GameWorld.instance():registerPlayer(player, session)
 
-    local map = GameWorld.instance():getMap(player.location.map)
+    CommonWritter.sendQuest(player)
+    CommonWritter.mainCharInfo(player)
+    CommonWritter.fillRectUpdate(session, 3)
+    CommonWritter.sendBytes(session, Cmd.LOGIN, FileUtils.readBytes("msg/table_map"))
+    InventoryManager.refresh(player)
+
+    local map = GameWorld.instance():joinMap(player, player.location.map, 0)
     if not map then
-        return CommonResponse.noticeBox(session, "Map not found")
+        return CommonWritter.noticeBox(session, "Map not found")
     end
 
-    map:addPlayer(player, 0)
+    CommonWritter.listSkill(session)
+    CommonWritter.loginRms(player)
+    CommonWritter.fillRectUpdate(session, 5)
 
-    CommonResponse.fillRectUpdate(session, 3)
-    CommonResponse.mainCharInfo(session)
-    CommonResponse.sendBytes(session, Cmd.LOGIN, FileUtils.readBytes("msg/table_map"))
-    CommonResponse.changeMap(session)
-
-
-    -- CommonResponse.enterGame(session)
     return true
+end
+
+function CommonHandler.onSaveRms(session, request)
+    local player = session:get("player")
+    if not player or request.size <= 0 then
+        return false
+    end
+    local data = { request.data:byte(1, -1) }
+    if request.id == 0 then
+        player.rms[1] = data
+    elseif request.id == 3 and request.size == 11 then
+        player.rms[2] = data
+    end
+
+    return true
+end
+
+function CommonHandler.onHealth(session, request)
+    local player = session:get("player")
+    if not player then
+        return false
+    end
+
+    return CommonWritter.updateHealth(player)
 end
 
 return {
@@ -241,5 +260,7 @@ return {
         [Cmd.LOAD_IMAGE_DATA_PART_CHAR] = CommonHandler.onLoadPartImage,
         [Cmd.CREATE_CHAR] = CommonHandler.onCreateChar,
         [Cmd.SELECT_CHAR] = CommonHandler.onSelectChar,
+        [Cmd.SAVE_RMS_SERVER] = CommonHandler.onSaveRms,
+        [Cmd.PLAYER_SUCKHOE] = CommonHandler.onHealth,
     }
 }

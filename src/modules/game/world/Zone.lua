@@ -1,3 +1,5 @@
+local Cmd = require "network.Cmd"
+local CommonWritter = require "modules.writters.CommonWritter"
 -- src/game/world/Zone.lua
 -- Domain object: a zone inside a map that holds players.
 
@@ -78,7 +80,6 @@ end
 function Zone:addMonster(monster)
     if not monster then return false end
 
-    -- If the player is already in another zone, remove them first
     if monster.zone and monster.zone ~= self then
         monster.zone:removeMonster(monster)
     end
@@ -140,9 +141,11 @@ function Zone:getStatusArea()
 end
 
 function Zone:onPlayerJoin(player)
+    CommonWritter.changeMap(player)
+    CommonWritter.mainCharInfo(player)
     self:forEachPlayer(function(other)
-        -- notify other
-    end, player)
+        other:send(Packet.new(Cmd.CHAR_WEARING, player:wearingData()))
+    end)
 end
 
 function Zone:onPlayerLeave(player)

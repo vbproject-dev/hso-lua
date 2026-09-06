@@ -59,8 +59,10 @@ function GameData.getNpc(id)
     return GameData.npcs:findFirst(function(data) return data.id == id end)
 end
 
-function GameData.getSkill(id)
-    return GameData.skills:findFirst(function(data) return data.id == id end)
+function GameData.getSkills(class)
+    return GameData.skills:filter(function(data)
+        return data.role == class
+    end)
 end
 
 function GameData.getOption(id)
