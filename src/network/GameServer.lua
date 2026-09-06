@@ -44,6 +44,8 @@ function GameServer:init()
 
     local modules = {
         { module = "modules.handlers.CommonHandler" },
+        { module = "modules.handlers.LoginHandler" },
+        { module = "modules.handlers.CharacterHandler" },
     }
 
     HandlerRegistry.loadAll(modules)

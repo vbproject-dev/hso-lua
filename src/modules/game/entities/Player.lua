@@ -73,17 +73,22 @@ end
 
 function Player:wear(item)
     local slots = EquipType[item.info.type]
-    if not slots then return false end
+    if not slots then return nil end
 
-    for _, slot in ipairs(slots) do
-        if not self:getWearing(slot) then
-            item.slot = slot
-            self.wearing:set(slot, item)
-            return true
+    local slot = slots[1]
+
+    for _, candidate in ipairs(slots) do
+        if not self.wearing:get(candidate) then
+            slot = candidate
+            break
         end
     end
 
-    return false
+    local old = self.wearing:get(slot)
+    item.slot = slot
+    self.wearing:set(slot, item)
+
+    return old
 end
 
 function Player:unwear(slot)

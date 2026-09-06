@@ -11,30 +11,12 @@ function CommonWritter.sendBytes(session, cmd, bytes)
     end)
 end
 
-function CommonWritter.loginFail(session, text)
-    return try(function()
-        local packet = Packet.new(Cmd.LOGIN_FAIL)
-        packet:writeUTF(text)
-        packet:writeByte(0)
-        session:send(packet)
-    end)
-end
-
 function CommonWritter.noticeBox(session, text)
     return try(function()
         local packet = Packet.new(Cmd.NOTICE_BOX)
         packet:writeUTF(text)
         packet:writeUTF("")
         packet:writeByte(15)
-        session:send(packet)
-    end)
-end
-
-function CommonWritter.saveLogin(session, user, pass)
-    return try(function()
-        local packet = Packet.new(31)
-        packet:writeUTF(user)
-        packet:writeUTF(pass)
         session:send(packet)
     end)
 end
@@ -417,6 +399,25 @@ function CommonWritter.listSkill(session)
     end)
 end
 
+function CommonWritter.updateHealth(player)
+    return try(function()
+        local packet = Packet.new(Cmd.PLAYER_SUCKHOE)
+        packet:writeInt(32000) -- Stamina Points
+        packet:writeInt(0)     -- Arena Points
+        player:send(packet)
+    end)
+end
+
+function CommonWritter.sendQuest(player)
+    return try(function()
+        local packet = Packet.new(Cmd.QUEST)
+        packet:writeByte(10)
+        packet:writeByte(10)
+        packet:writeByte(10)
+        player:send(packet)
+    end)
+end
+
 function CommonWritter:loginRms(player)
     if not player then return false end
 
@@ -457,25 +458,6 @@ function CommonWritter:loginRms(player)
             packet:writeBytes(bytes)
             player:send(packet)
         end
-    end)
-end
-
-function CommonWritter.updateHealth(player)
-    return try(function()
-        local packet = Packet.new(Cmd.PLAYER_SUCKHOE)
-        packet:writeInt(32000) -- Stamina Points
-        packet:writeInt(0)     -- Arena Points
-        player:send(packet)
-    end)
-end
-
-function CommonWritter.sendQuest(player)
-    return try(function()
-        local packet = Packet.new(Cmd.QUEST)
-        packet:writeByte(10)
-        packet:writeByte(10)
-        packet:writeByte(10)
-        player:send(packet)
     end)
 end
 

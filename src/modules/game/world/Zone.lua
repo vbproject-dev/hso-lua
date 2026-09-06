@@ -1,7 +1,7 @@
 local Cmd = require "network.Cmd"
 local CommonWritter = require "modules.writters.CommonWritter"
--- src/game/world/Zone.lua
--- Domain object: a zone inside a map that holds players.
+local CharacterWritter = require "modules.writters.CharacterWritter"
+
 
 local Zone = class("Zone")
 
@@ -142,7 +142,7 @@ end
 
 function Zone:onPlayerJoin(player)
     CommonWritter.changeMap(player)
-    CommonWritter.mainCharInfo(player)
+    CharacterWritter.mainCharInfo(player)
     self:forEachPlayer(function(other)
         other:send(Packet.new(Cmd.CHAR_WEARING, player:wearingData()))
     end)
