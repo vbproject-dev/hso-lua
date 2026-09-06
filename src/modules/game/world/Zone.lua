@@ -141,8 +141,8 @@ function Zone:getStatusArea()
 end
 
 function Zone:onPlayerJoin(player)
-    CommonWritter.changeMap(player)
     CharacterWritter.mainCharInfo(player)
+    CommonWritter.changeMap(player)
     self:forEachPlayer(function(other)
         other:send(Packet.new(Cmd.CHAR_WEARING, player:wearingData()))
     end)

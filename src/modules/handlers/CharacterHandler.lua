@@ -79,17 +79,17 @@ function CharacterHandler.onCreateChar(session, request)
         bank = "[]",
         location = JSON.fromTable({ map = 0, x = 132, y = 132 }),
         rms = "[[],[]]",
-        info = JSON.fromTable({
+        strength = 5,
+        dexterity = 5,
+        vitality = 5,
+        intelligence = 5,
+        skill = JSON.fromTable({ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }),
+        skill_points = 0,
+        potential_points = 0,
+        part = JSON.fromTable({
             head = request.head,
             eye = request.eye,
             hair = request.hair,
-            str = 5,
-            dex = 5,
-            vit = 5,
-            int = 5,
-            skill = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            skillPoint = 0,
-            potentialPoint = 0,
         })
     })
 
@@ -107,10 +107,12 @@ function CharacterHandler.onSelectChar(session, request)
 
     local character, err = findTable("player", { id = request.id })
     if not character then
+        log("Failed to find character: " .. tostring(err))
         return CommonWritter.noticeBox(session, "Character not found")
     end
 
     if character.account_id ~= account.id then
+        log("Character does not belong to account: " .. account.id .. " != " .. character.account_id)
         return CommonWritter.noticeBox(session, "Character does not belong to you")
     end
 
@@ -120,21 +122,28 @@ function CharacterHandler.onSelectChar(session, request)
     GameWorld.instance():registerPlayer(player, session)
 
     CommonWritter.sendQuest(player)
-    CharacterWritter.mainCharInfo(player)
     CommonWritter.fillRectUpdate(session, 3)
     CommonWritter.sendBytes(session, Cmd.LOGIN, FileUtils.readBytes("msg/table_map"))
     InventoryManager.refresh(player)
 
-    local map = GameWorld.instance():joinMap(player, player.location.map, 0)
+    local map = GameWorld.instance():joinMap(player, player.mapId, 0)
     if not map then
+        log("Failed to join map: " .. player.mapId)
         return CommonWritter.noticeBox(session, "Map not found")
     end
 
-    CommonWritter.listSkill(session)
-    CommonWritter.loginRms(player)
-    CommonWritter.fillRectUpdate(session, 5)
+    if not CommonWritter.listSkill(session) then
+        log("Failed to send list skills")
+        return false
+    end
 
-    return true
+    if not CommonWritter.loginRms(player) then
+        log("Failed to send login RMS")
+        return false
+    end
+
+
+    return CommonWritter.fillRectUpdate(session, 5)
 end
 
 return {

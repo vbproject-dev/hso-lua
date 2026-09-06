@@ -39,6 +39,8 @@ function GameServer:init()
         return false
     end
 
+    self.db = conn
+
     if not GameData.load() then
         return false
     end

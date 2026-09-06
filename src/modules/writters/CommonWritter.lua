@@ -197,8 +197,8 @@ function CommonWritter.changeMap(player)
         local map = player:getMap()
         local packet = Packet.new(Cmd.CHANGE_MAP)
         packet:writeShort(map.id)
-        packet:writeShort(player.location.x / 24)
-        packet:writeShort(player.location.y / 24)
+        packet:writeShort(player.x / 24)
+        packet:writeShort(player.y / 24)
 
         packet:writeBytes(player:getMap():toBytes())
 
@@ -238,6 +238,8 @@ function CommonWritter.listSkill(session)
             packet:writeUTF(skill.description)
             packet:writeByte(skill.buff_type)
             packet:writeByte(skill.sub_effect_type)
+
+            log("levels size %d for %d", #skill.levels, skill.sid)
             packet:writeByte(#skill.levels)
             for _, lv in ipairs(skill.levels) do
                 packet:writeShort(lv.mpCost)
@@ -259,8 +261,8 @@ function CommonWritter.listSkill(session)
                 packet:writeShort(lv.castRange)
             end
 
-            packet:writeShort(skill.performDuration)
-            packet:writeByte(skill.paintType)
+            packet:writeShort(skill.perform_duration)
+            packet:writeByte(skill.paint_type)
         end)
 
         session:send(packet)
@@ -286,10 +288,14 @@ function CommonWritter.sendQuest(player)
     end)
 end
 
-function CommonWritter:loginRms(player)
-    if not player then return false end
+function CommonWritter.loginRms(player)
+    if not player then
+        return false
+    end
 
-    local data = player.rms
+
+    local Helper = require("utils.Helper")
+
     return try(function()
         local packet = Packet.new(55)
         packet:writeByte(1)
@@ -307,23 +313,22 @@ function CommonWritter:loginRms(player)
             packet:writeShort(1)
             packet:writeByte(0)
         end
+
         player:send(packet)
 
-        if #data[1] > 0 then
-            local bytes = string.char(table.unpack(data[1]))
+        if #player.rms[1] > 0 then
             packet = Packet.new(55)
             packet:writeByte(0)
-            packet:writeShort(#data[1])
-            packet:writeBytes(bytes)
+            packet:writeShort(#player.rms[1])
+            packet:writeBytes(Helper.tableToString(player.rms[1]))
             player:send(packet)
         end
 
-        if #data[2] > 0 then
-            local bytes = string.char(table.unpack(data[2]))
+        if #player.rms[2] > 0 then
             packet = Packet.new(55)
             packet:writeByte(3)
-            packet:writeShort(#data[2])
-            packet:writeBytes(bytes)
+            packet:writeShort(#player.rms[2])
+            packet:writeBytes(Helper.tableToString(player.rms[2]))
             player:send(packet)
         end
     end)

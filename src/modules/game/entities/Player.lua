@@ -1,10 +1,12 @@
-local BaseObject = require("modules.game.entities.BaseObject")
-local Equipment = require("modules.game.items.Equipment")
-local Inventory = require("modules.game.inventory.Inventory")
-local EquipType = require("modules.game.items.EquipType")
+local BaseObject    = require("modules.game.entities.BaseObject")
+local Equipment     = require("modules.game.items.Equipment")
+local Inventory     = require("modules.game.inventory.Inventory")
+local EquipType     = require("modules.game.items.EquipType")
 local CommonWritter = require("modules.writters.CommonWritter")
+local GameData      = require("database.GameData")
+local Skill         = require("modules.game.skill.Skill")
 
-local Player = class("Player", BaseObject)
+local Player        = class("Player", BaseObject)
 
 function Player:ctor(data)
     Player.super.ctor(self, data)
@@ -14,8 +16,14 @@ function Player:ctor(data)
     self.exp = data.exp or 0
     self.gold = data.gold or 0
     self.gem = data.gem or 0
-    self.info = data.info or {}
+    self.part = data.part or {}
     self.rms = data.rms or { {}, {} }
+    self.strength = data.strength or 5
+    self.dexterity = data.dexterity or 5
+    self.vitality = data.vitality or 5
+    self.intelligence = data.intelligence or 5
+    self.potentialPoints = data.potential_points or 0
+    self.skillPoints = data.skill_points or 0
     self.fashion = ArrayList.new(data.fashion or { -1, -1, -1, -1, -1, -1, -1 })
 
     self.wearing = ArrayList.new()
@@ -40,6 +48,15 @@ function Player:ctor(data)
 
     self.inventory = Inventory.new(data.bag or {})
     self.bank = Inventory.new(data.bank or {})
+
+    local skillLevelData = data.skill or {}
+    self.skills = ArrayList.new()
+    local skillsData = GameData.getSkills(self.class)
+    skillsData:forEachIndexed(function(index, skillData)
+        local level = skillLevelData[index + 1]
+        self.skills:add(Skill.new(level, skillData))
+    end)
+
     -- Stats
     self.hp = 32000
     self.maxHp = 32000
@@ -120,12 +137,19 @@ function Player:toTable()
         exp = self.exp,
         gold = self.gold,
         gem = self.gem,
+        strength = self.strength,
+        dexterity = self.dexterity,
+        vitality = self.vitality,
+        intelligence = self.intelligence,
+        potentialPoints = self.potentialPoints,
+        skillPoints = self.skillPoints,
+        skill = JSON.fromTable(self.skills:map(function(skill) return skill.level end):toTable()),
         location = JSON.fromTable({
             x = self.x,
             y = self.y,
             map = self.mapId
         }),
-        info = JSON.fromTable(self.info),
+        part = JSON.fromTable(self.part),
         rms = JSON.fromTable(self.rms),
 
         -- Filter only non null value

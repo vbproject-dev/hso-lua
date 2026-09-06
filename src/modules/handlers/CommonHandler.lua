@@ -32,12 +32,10 @@ end
 
 function CommonHandler.onSaveRms(session, request)
     local player = session:get("player")
+    if not player or request.size <= 0 then return false end
 
-    if not player or request.size <= 0 then
-        return false
-    end
-
-    local data = { request.data:byte(1, -1) }
+    local Helper = require("utils.Helper")
+    local data = Helper.stringToTable(request.data)
     if request.id == 0 then
         player.rms[1] = data
     elseif request.id == 3 and request.size == 11 then

@@ -7,7 +7,13 @@ local GameData = {
     options = ArrayList.new(),
     maps = ArrayList.new(),
     npcs = ArrayList.new(),
-    skills = ArrayList.new()
+
+    skills = {
+        [0] = ArrayList.new(),
+        [1] = ArrayList.new(),
+        [2] = ArrayList.new(),
+        [3] = ArrayList.new()
+    }
 }
 
 function GameData.load()
@@ -20,7 +26,7 @@ function GameData.load()
         { table = "item_option",    field = "options" },
         { table = "map_data",       field = "maps" },
         { table = "npc",            field = "npcs" },
-        { table = "skill",          field = "skills" }
+        { table = "skill",          field = "skills",    groupBy = "role" }
     }
 
     for _, dataset in ipairs(datasets) do
@@ -28,11 +34,19 @@ function GameData.load()
 
         if not result then
             log("Failed to load %s: %s", dataset.table, err)
-
             return false
         end
 
-        GameData[dataset.field] = result
+        if dataset.groupBy then
+            result:sort(function(a, b)
+                return a.role < b.role
+            end)
+            result:forEach(function(skill)
+                GameData[dataset.field][skill.role]:add(skill)
+            end)
+        else
+            GameData[dataset.field] = result
+        end
     end
 
     return true
@@ -59,10 +73,8 @@ function GameData.getNpc(id)
     return GameData.npcs:findFirst(function(data) return data.id == id end)
 end
 
-function GameData.getSkills(class)
-    return GameData.skills:filter(function(data)
-        return data.role == class
-    end)
+function GameData.getSkills(role)
+    return GameData.skills[role]:reversed()
 end
 
 function GameData.getOption(id)

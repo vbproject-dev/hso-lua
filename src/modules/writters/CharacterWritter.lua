@@ -25,9 +25,9 @@ function CharacterWritter.selectCharacter(session)
             packet:writeInt(player.id)
             packet:writeUTF(player.name)
 
-            packet:writeByte(player.info.head)
-            packet:writeByte(player.info.hair)
-            packet:writeByte(player.info.eye)
+            packet:writeByte(player.part.head)
+            packet:writeByte(player.part.hair)
+            packet:writeByte(player.part.eye)
 
             local wearing = player.wearing:filter(function(item) return item ~= nil end)
             packet:writeByte(wearing:size())
@@ -59,10 +59,10 @@ function CharacterWritter.mainCharInfo(player)
         packet:writeInt(player.maxHp)
         packet:writeInt(player.mp)
         packet:writeInt(player.maxMp)
-        packet:writeByte(player.info.head)
+        packet:writeByte(player.part.head)
         packet:writeByte(player.class)
-        packet:writeByte(player.info.eye)
-        packet:writeByte(player.info.hair)
+        packet:writeByte(player.part.eye)
+        packet:writeByte(player.part.hair)
 
         local attr = { 0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 28, 33, 34, 35, 36, 40, 29, 30, 31, 32, 181 }
 
@@ -74,14 +74,14 @@ function CharacterWritter.mainCharInfo(player)
 
         packet:writeShort(player.level)
         packet:writeShort(0) -- EXP PERCENT
-        packet:writeShort(player.info.potential_point)
-        packet:writeShort(player.info.skill_point)
+        packet:writeShort(player.potential_points)
+        packet:writeShort(player.skill_points)
 
         -- STATS
-        packet:writeShort(0)
-        packet:writeShort(0)
-        packet:writeShort(0)
-        packet:writeShort(0)
+        packet:writeShort(5)
+        packet:writeShort(5)
+        packet:writeShort(5)
+        packet:writeShort(5)
 
         -- Bonus STATS
         packet:writeShort(0)
@@ -90,14 +90,14 @@ function CharacterWritter.mainCharInfo(player)
         packet:writeShort(0)
 
         -- Skill lv
-        for __, id in ipairs(player.info.skill) do
-            packet:writeByte(id)
-        end
+        player.skills:forEach(function(skill)
+            packet:writeByte(skill.level)
+        end)
 
-        -- Bonus skill lv
-        for __, id in ipairs(player.info.skill) do
+        -- Bonus skill lv , dummy for now
+        player.skills:forEach(function(skill)
             packet:writeByte(0)
-        end
+        end)
 
         packet:writeByte(0)   -- TypePK
         packet:writeShort(0)  -- Point PK

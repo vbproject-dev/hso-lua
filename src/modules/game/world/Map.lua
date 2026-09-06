@@ -148,7 +148,7 @@ function Map:toBytes()
         packet:writeByte(self.tileData.width)
         packet:writeByte(self.tileData.height)
         packet:writeByte(self.tileData.imageId)
-        packet:writeBytes(self.tileData.data)
+        packet:writeBytes(string.char(table.unpack(self.tileData.data)))
         return packet:getData()
     end
 

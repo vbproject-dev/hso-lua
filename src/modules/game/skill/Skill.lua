@@ -1,3 +1,4 @@
+local ClassIds = require "modules.game.entities.ClassIds"
 local Skill = class("Skill")
 
 Skill.PHYSICAL_SKILLS = {
@@ -9,58 +10,40 @@ Skill.PHYSICAL_SKILLS = {
     [19] = true
 }
 
-function Skill:ctor(skillId, currentLevel, role)
-    self.skillId = skillId
-    self.currentLevel = currentLevel
+function Skill:ctor(level, data)
+    self.level = level
+    self.id = data.sid
+    self.levels = ArrayList.new(data.levels)
+    self.type = data.type
+    self.buffType = data.buffType
+    self.role = data.role
+    self.levelData = level > 0 and self.levels:get(level - 1) or {}
     self.lastUsedTime = 0
-    self.role = role
-    self.skillData = nil
-end
 
-function Skill:getCurrentLevelData()
-    local skill = self:getSkillData()
-    return skill and skill:getLevel(self.currentLevel - 1) or nil
-end
-
-function Skill:getSkillData()
-    if not self.skillData then
-        self.skillData = GameData.getSkill(self.role, self.skillId)
-    end
-    return self.skillData
+    log("skill id %d curLevel %d of %d", self.id, level, self.levels:size())
 end
 
 function Skill:upgrade(playerLevel, value)
-    local skill = self:getSkillData()
-    if not skill then return false end
+    local targetLevel = math.min(self.level + value, self.levels:size())
+    local newLevel = self.level
 
-    local maxLevel = #skill.levels
-    local targetLevel = math.min(self.currentLevel + value, maxLevel)
-    local newLevel = self.currentLevel
-
-    for lv = self.currentLevel + 1, targetLevel do
-        if not skill:canLearn(lv, playerLevel) then
-            break
-        end
+    for lv = self.level + 1, targetLevel do
+        if not self:canLearn(lv, playerLevel) then break end
         newLevel = lv
     end
 
-    if newLevel == self.currentLevel then
-        return false
-    end
+    if newLevel == self.level then return false end
 
-    self.currentLevel = newLevel
+    self.level = newLevel
+    self.levelData = self.levels:get(newLevel - 1)
     return true
 end
 
 function Skill:canUpgrade(playerLevel, value)
-    local skill = self:getSkillData()
-    if not skill then return false end
+    local targetLevel = math.min(self.level + value, self.levels:size())
 
-    local maxLevel = #skill.levels
-    local targetLevel = math.min(self.currentLevel + value, maxLevel)
-
-    for lv = self.currentLevel + 1, targetLevel do
-        if not skill:canLearn(lv, playerLevel) then
+    for lv = self.level + 1, targetLevel do
+        if not self:canLearn(lv, playerLevel) then
             return false
         end
     end
@@ -69,33 +52,19 @@ function Skill:canUpgrade(playerLevel, value)
 end
 
 function Skill:isOnCooldown()
-    local levelData = self:getCurrentLevelData()
-    if not levelData then
-        return true
-    end
-
-    if self.lastUsedTime == 0 then
-        return false
-    end
+    if self.lastUsedTime == 0 then return false end
 
     local elapsedTime = os.time() * 1000 - self.lastUsedTime
-    local adjustedCooldown = math.max(0, levelData.cooldown - 1000)
+    local adjustedCooldown = math.max(0, self.levelData.cooldown - 1000)
 
     return elapsedTime < adjustedCooldown
 end
 
 function Skill:getRemainingCooldown()
-    if not self:isOnCooldown() then
-        return 0
-    end
-
-    local levelData = self:getCurrentLevelData()
-    if not levelData then
-        return 0
-    end
+    if not self:isOnCooldown() then return 0 end
 
     local elapsedTime = os.time() * 1000 - self.lastUsedTime
-    local adjustedCooldown = math.max(0, levelData.cooldown - 1000)
+    local adjustedCooldown = math.max(0, self.levelData.cooldown - 1000)
 
     return math.max(0, adjustedCooldown - elapsedTime)
 end
@@ -109,18 +78,15 @@ function Skill:resetCooldown()
 end
 
 function Skill:isMaxLevel()
-    local skill = self:getSkillData()
-    return skill and self.currentLevel >= #skill.levels or false
+    return self.level >= self.levels:size()
 end
 
 function Skill:getType()
-    local skill = self:getSkillData()
-    return skill and skill.type or -1
+    return self.type or -1
 end
 
-function Skill:getTargetCount()
-    local levelData = self:getCurrentLevelData()
-    return levelData and levelData.targetCount or 0
+function Skill:getMaxTarget()
+    return self.levelData and self.levelData.targetCount or 0
 end
 
 function Skill:isPhysicalSkill(skillId)
@@ -128,62 +94,32 @@ function Skill:isPhysicalSkill(skillId)
 end
 
 function Skill:isBuffSkill()
-    local skill = self:getSkillData()
-    if not skill then return false end
-
-    return skill.type == 1 or skill.type == 2
-end
-
-function Skill:createBuff()
-    local lvData = self:getCurrentLevelData()
-    local skill = self:getSkillData()
-
-    if not lvData or not skill then
-        return nil
-    end
-
-    if lvData.buffDuration <= 0 then
-        return nil
-    end
-
-    local buff = BuffEffect.new(
-        self.skillId,
-        skill.iconId,
-        skill.buffType,
-        lvData.buffDuration
-    )
-
-    if lvData.options then
-        for _, option in ipairs(lvData.options) do
-            if option then
-                local statType = StatType.fromValue(option.id)
-
-                if statType then
-                    buff:addStatModifier(statType, option.value)
-                end
-            end
-        end
-    end
-
-    return buff
+    return self.type == 1 or self.type == 2
 end
 
 function Skill:getDamageType()
-    if self:isPhysicalSkill(self.skillId) then
-        return DamageType.PHYSICAL
+    if self:isPhysicalSkill(self.id) then
+        return ClassIds.TYPE.PHYSICAL
     end
 
     if self.role == 0 then
-        return DamageType.FIRE
+        return ClassIds.ELEMENT.FIRE
     elseif self.role == 1 then
-        return DamageType.POISON
+        return ClassIds.ELEMENT.POISON
     elseif self.role == 2 then
-        return DamageType.ICE
+        return ClassIds.ELEMENT.ICE
     elseif self.role == 3 then
-        return DamageType.LIGHTING
+        return ClassIds.ELEMENT.LIGHTING
+    end
+end
+
+function Skill:canLearn(level, playerLevel)
+    if level <= 0 or level > self.levels:size() then
+        return false
     end
 
-    error("Unexpected role: " .. tostring(self.role))
+    local skillLevel = self.levels:get(level - 1)
+    return skillLevel ~= nil and playerLevel >= skillLevel.requiredLevel
 end
 
 return Skill

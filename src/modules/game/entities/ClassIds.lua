@@ -9,4 +9,10 @@ return {
         PHYSICAL = 0,
         MAGICAL  = 1,
     },
+    ELEMENT = {
+        FIRE      = 0,
+        ICE       = 1,
+        LIGHTNING = 2,
+        POISON    = 3,
+    }
 }
