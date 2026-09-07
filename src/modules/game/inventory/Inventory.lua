@@ -1,28 +1,27 @@
 local Equipment = require "modules.game.items.Equipment"
 local Potion    = require "modules.game.items.Potion"
 local Material  = require "modules.game.items.Material"
-local Item      = require "modules.game.items.Item"
 local Inventory = class("Inventory")
 
 function Inventory:ctor(data, capacity)
+    self.maxSize = capacity or 126
     self.data = ArrayList.new()
     for __, item in ipairs(data or {}) do
         self.data:add(self:createItem(item))
     end
-
-    self.maxSize = capacity or 126
 end
 
 function Inventory:createItem(data)
+    local item
     if data.category == 3 then
-        return Equipment.new(data)
+        item = Equipment.new(data)
     elseif data.category == 4 then
-        return Potion.new(data)
+        item = Potion.new(data)
     elseif data.category == 7 then
-        return Material.new(data)
+        item = Material.new(data)
     end
 
-    return Item.new(data)
+    return item
 end
 
 function Inventory:size()

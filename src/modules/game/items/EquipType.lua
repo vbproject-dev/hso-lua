@@ -1,6 +1,8 @@
 local Slot = require("modules.game.items.Slot")
 
-local EquipType = {
+local EquipType = {}
+
+EquipType.types = {
     [Slot.ARMOR] = { 0 },
     [Slot.LEG] = { 1 },
     [Slot.HELMET] = { 2 },
@@ -28,30 +30,24 @@ local EquipType = {
 }
 
 function EquipType.getSlot(type)
-    for slot, types in pairs(EquipType) do
+    for slot, types in pairs(EquipType.types) do
         for _, value in ipairs(types) do
-            if value == type then
-                return slot
-            end
+            if value == type then return slot end
         end
     end
 end
 
 function EquipType.getAvailableSlot(type, wearing)
-    for slot, types in pairs(EquipType) do
+    for slot, types in pairs(EquipType.types) do
         for _, value in ipairs(types) do
-            if value == type and not wearing:get(slot) then
-                return slot
-            end
+            if value == type and not wearing:get(slot) then return slot end
         end
     end
 end
 
 function EquipType.isValid(slot, type)
-    for _, value in ipairs(EquipType[slot] or {}) do
-        if value == type then
-            return true
-        end
+    for _, value in ipairs(EquipType.types[slot] or {}) do
+        if value == type then return true end
     end
     return false
 end

@@ -2,11 +2,21 @@
 -- Defines the global DEBUG flag and log()/printTable() helpers.
 
 _G.DEBUG = false
+_G.GFX = false
 
 _G.log = function(format, ...)
     if not DEBUG then return end
 
-    print(string.format(format, ...))
+    local msg = string.format(format, ...)
+    if GFX then
+        local SceneManager = require("gfx.SceneManager")
+        local scene = SceneManager.getInstance():getScene()
+        if scene and scene.log then
+            scene:log(msg)
+        end
+    else
+        print(msg)
+    end
 end
 
 _G.printTable = function(t, indent, done)

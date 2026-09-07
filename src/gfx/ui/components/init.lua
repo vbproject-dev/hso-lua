@@ -1,0 +1,16 @@
+return {
+    UIComponent   = require("gfx.ui.components.UIComponent"),
+    UILabel       = require("gfx.ui.components.UILabel"),
+    UIPanel       = require("gfx.ui.components.UIPanel"),
+    UIButton      = require("gfx.ui.components.UIButton"),
+    UITextField   = require("gfx.ui.components.UITextField"),
+    UIImage       = require("gfx.ui.components.UIImage"),
+    UIScrollView  = require("gfx.ui.components.UIScrollView"),
+    UISlider      = require("gfx.ui.components.UISlider"),
+    UICheckbox    = require("gfx.ui.components.UICheckbox"),
+    UIRadioButton = require("gfx.ui.components.UIRadioButton"),
+    UIProgressBar = require("gfx.ui.components.UIProgressBar"),
+    UIListView    = require("gfx.ui.components.UIListView"),
+    UITooltip     = require("gfx.ui.components.UITooltip"),
+    UIConsole     = require("gfx.ui.components.UIConsole"),
+}

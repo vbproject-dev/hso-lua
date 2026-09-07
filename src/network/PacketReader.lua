@@ -71,6 +71,13 @@ function PacketReader.onMove(packet)
     }
 end
 
+function PacketReader.onUseItem(packet)
+    return {
+        index = packet:readByte(),
+        slot = packet:readByte(),
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
@@ -80,4 +87,5 @@ return {
     [Cmd.SAVE_RMS_SERVER] = PacketReader.onSaveRmsServer,
 
     [Cmd.OBJECT_MOVE] = PacketReader.onMove,
+    [Cmd.USE_ITEM] = PacketReader.onUseItem,
 }

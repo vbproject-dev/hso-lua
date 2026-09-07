@@ -4,9 +4,9 @@ local GameData         = require "database.GameData"
 local Equipment        = require "modules.game.items.Equipment"
 local GameWorld        = require "modules.game.world.GameWorld"
 local Player           = require "modules.game.entities.Player"
-local InventoryManager = require "modules.game.inventory.InventoryManager"
 local CharacterWritter = require "modules.writters.CharacterWritter"
 local Inventory        = require "modules.game.inventory.Inventory"
+local GameWritter      = require "modules.writters.GameWritter"
 local CharacterHandler = {}
 
 function CharacterHandler.onCreateChar(session, request)
@@ -139,7 +139,7 @@ function CharacterHandler.onSelectChar(session, request)
     CommonWritter.sendQuest(player)
     CommonWritter.fillRectUpdate(session, 3)
     CommonWritter.sendBytes(session, Cmd.LOGIN, FileUtils.readBytes("msg/table_map"))
-    InventoryManager.refresh(player)
+    GameWritter.updateInventory(player)
 
     local map = GameWorld.instance():joinMap(player, player.mapId, 0)
     if not map then

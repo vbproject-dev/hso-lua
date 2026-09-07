@@ -86,7 +86,7 @@ function Player:wear(item, slot)
         return CommonWritter.noticeBox(self.session, "Invalid equipment slot")
     end
 
-    slot = slot or EquipType.getAvailableSlot(item.info.type, self.wearing)
+    slot = slot or EquipType.getSlot(item.info.type)
     if not slot then
         return CommonWritter.noticeBox(self.session, "Invalid equipment type")
     end

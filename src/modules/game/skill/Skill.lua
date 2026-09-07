@@ -19,8 +19,6 @@ function Skill:ctor(level, data)
     self.role = data.role
     self.levelData = level > 0 and self.levels:get(level - 1) or {}
     self.lastUsedTime = 0
-
-    log("skill id %d curLevel %d of %d", self.id, level, self.levels:size())
 end
 
 function Skill:upgrade(playerLevel, value)
