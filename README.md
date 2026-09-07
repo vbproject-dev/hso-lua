@@ -1,17 +1,4 @@
-The server executables are placed alongside the `Assets` directory. The `Assets` directory contains the `src` folder for scripts and the `res` folder for game resources.
 
-Example directory structure:
-
-```text
-Server/
-├── Server-linux           # Linux server (Ubuntu 22.04 or newer)
-├── Server-win64.exe       # Windows server
-└── Assets/
-    ├── src/               # Scripts
-    └── res/               # Game resources
-```
-
-This project is still under active development, and contributions are welcome! If you'd like to help, feel free to fork the repository, submit a pull request, report bugs, or suggest improvements. All contributions and feedback are greatly appreciated.
 
 # BINDING CLASS
 
