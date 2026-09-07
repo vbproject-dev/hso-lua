@@ -1,6 +1,7 @@
-local Cmd = require "network.Cmd"
-local CommonWritter = require "modules.writters.CommonWritter"
+local Cmd              = require "network.Cmd"
+local CommonWritter    = require "modules.writters.CommonWritter"
 local CharacterWritter = require "modules.writters.CharacterWritter"
+local GameWritter      = require "modules.writters.GameWritter"
 
 
 local Zone = class("Zone")
@@ -11,6 +12,7 @@ function Zone:ctor(map, id, maxPlayers)
     self.maxPlayers = maxPlayers or 10
     self.players = ArrayList.new()
     self.monsters = ArrayList.new()
+    self.npcs = ArrayList.new()
 end
 
 function Zone:getId()
@@ -79,10 +81,7 @@ end
 
 function Zone:addMonster(monster)
     if not monster then return false end
-
-    if monster.zone and monster.zone ~= self then
-        monster.zone:removeMonster(monster)
-    end
+    if monster.zone and monster.zone ~= self then monster.zone:removeMonster(monster) end
 
     monster:setZone(self)
 
@@ -94,14 +93,58 @@ function Zone:addMonster(monster)
 end
 
 function Zone:removeMonster(monster)
-    if not monster then return false end
-
-    if not self.monsters:contains(monster) then
-        return false
-    end
+    if not monster or not self.monsters:contains(monster) then return false end
 
     self.monsters:remove(monster)
     monster:setZone(nil)
+
+    return true
+end
+
+function Zone:addNpc(npc)
+    if not npc then return false end
+    if npc.zone and npc.zone ~= self then npc.zone:removeNpc(npc) end
+
+    npc:setZone(self)
+
+    if not self.npcs:contains(npc) then
+        self.npcs:add(npc)
+    end
+
+    return true
+end
+
+function Zone:removeNpc(npc)
+    if not npc or not self.npcs:contains(npc) then return false end
+
+    self.npcs:remove(npc)
+    npc:setZone(nil)
+
+    return true
+end
+
+function Zone:getObjects(type)
+    if type == 0 then return self.players end
+    if type == 1 then return self.monsters end
+    if type == 2 then return self.npcs end
+end
+
+function Zone:getObject(type, id)
+    local objects = self:getObjects(type)
+    if not objects then return nil end
+
+    return objects:findFirst(function(object) return object.id == id end)
+end
+
+function Zone:removeObject(type, id)
+    local objects = self:getObjects(type)
+    if not objects then return false end
+
+    local object = objects:findFirst(function(object) return object.id == id end)
+    if not object then return false end
+
+    objects:remove(object)
+    object:setZone(nil)
 
     return true
 end
@@ -143,6 +186,7 @@ end
 function Zone:onPlayerJoin(player)
     CharacterWritter.mainCharInfo(player)
     CommonWritter.changeMap(player)
+    GameWritter.npcBig(player, self.npcs)
     self:forEachPlayer(function(other)
         other:send(Packet.new(Cmd.CHAR_WEARING, player:wearingData()))
     end)

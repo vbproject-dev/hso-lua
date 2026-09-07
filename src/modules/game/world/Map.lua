@@ -1,5 +1,7 @@
-local Zone = require("modules.game.world.Zone")
-local Map = class("Map")
+local Zone    = require("modules.game.world.Zone")
+local Monster = require("modules.game.entities.Monster")
+local Npc     = require("modules.game.entities.Npc")
+local Map     = class("Map")
 
 function Map:ctor(data)
     self.id = data.id
@@ -11,18 +13,35 @@ function Map:ctor(data)
     self.isCity = data.is_city == 1
     self.isShowHs = data.show_hs == 1
     self.warps = ArrayList.new(data.warp_point)
-    self.mobs = ArrayList.new(data.mob_data)
     self.itemMap = ArrayList.new(data.item_map)
-    self.npcs = ArrayList.new(data.npc)
+    self.npcData = ArrayList.new(data.npc)
+    self.mobData = ArrayList.new(data.mob_data)
     self.tileData = data.tile_data
     self.bgType = data.bg_type
     self.bgHeight = data.bg_height
 
     self.zones = ArrayList.new()
-    -- Initialize zones (0-indexed to match client area index)
+
+
     for i = 0, self.zoneCount - 1 do
         local zone = Zone.new(self, i, self.maxPlayersPerZone)
 
+        self.mobData:forEachIndexed(function(index, data)
+            zone:addMonster(Monster.new({
+                id = index,
+                tempId = data.id,
+                x = data.x,
+                y = data.y
+            }))
+        end)
+
+        self.npcData:forEach(function(data)
+            zone:addNpc(Npc.new({
+                id = data.id,
+                x = data.x,
+                y = data.y
+            }))
+        end)
 
         self.zones:add(zone)
     end
@@ -128,6 +147,15 @@ function Map:getZoneStatusList()
             max = zone.maxPlayers,
             isFull = zone:isFull(),
         }
+    end)
+end
+
+function Map:getWarpAt(x, y)
+    local width, height = 48, 48
+
+    return self.warps:findFirst(function(warp)
+        return x >= warp.x - width / 2 and x <= warp.x + width / 2
+            and y >= warp.y - height / 2 and y <= warp.y + height / 2
     end)
 end
 

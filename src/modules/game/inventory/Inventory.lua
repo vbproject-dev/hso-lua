@@ -54,6 +54,20 @@ function Inventory:add(item)
     return true
 end
 
+function Inventory:addFrom(id, type, quantity)
+    local item
+
+    if type == 4 then
+        item = Potion.new({ id = id, quantity = quantity or 1 })
+    elseif type == 7 then
+        item = Material.new({ id = id, quantity = quantity or 1 })
+    else
+        item = Equipment.new({ id = id })
+    end
+
+    return self:add(item)
+end
+
 function Inventory:remove(item, quantity)
     if not item then return false end
 

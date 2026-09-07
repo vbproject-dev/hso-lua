@@ -73,6 +73,10 @@ function GameData.getNpc(id)
     return GameData.npcs:findFirst(function(data) return data.id == id end)
 end
 
+function GameData.getMonster(id)
+    return GameData.monsters:findFirst(function(data) return data.id == id end)
+end
+
 function GameData.getSkills(role)
     return GameData.skills[role]:reversed()
 end

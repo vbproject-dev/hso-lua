@@ -38,7 +38,7 @@ function GameWorld:joinMap(player, mapId, zoneId)
         return false
     end
 
-    return map:addPlayer(player, zoneId)
+    return map:addPlayer(player, zoneId or 0)
 end
 
 function GameWorld:getMap(mapId)

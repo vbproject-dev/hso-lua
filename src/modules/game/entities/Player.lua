@@ -10,6 +10,8 @@ local Player        = class("Player", BaseObject)
 
 function Player:ctor(data)
     Player.super.ctor(self, data)
+    self.type = 0
+    self.id = data.id or 0
     self.accountId = data.account_id or 0
     self.class = data.class or 0
     self.level = data.level or 1
@@ -24,6 +26,11 @@ function Player:ctor(data)
     self.intelligence = data.intelligence or 5
     self.potentialPoints = data.potential_points or 0
     self.skillPoints = data.skill_points or 0
+    self.typePK = -1
+    self.pointPK = 0
+    self.pointArena = 0
+    self.stamina = 32000
+
     self.fashion = ArrayList.new(data.fashion or { -1, -1, -1, -1, -1, -1, -1 })
 
     self.wearing = ArrayList.new()
@@ -41,12 +48,8 @@ function Player:ctor(data)
         end
     end
 
-    -- local count = self.wearing:reduce(0, function(count, item)
-    --     return count + (item and 1 or 0)
-    -- end)
-    -- log("wearing size %s", count)
 
-    self.inventory = Inventory.new(data.bag or {})
+    self.inventory = Inventory.new(data.inventory or {})
     self.bank = Inventory.new(data.bank or {})
 
     local skillLevelData = data.skill or {}
@@ -65,7 +68,9 @@ function Player:ctor(data)
 
     self.online = false
     self.session = nil
-    self.zone = nil
+
+    -- Game States
+    self.lastWarpTime = 0
 end
 
 function Player:setSession(session)
@@ -74,21 +79,6 @@ end
 
 function Player:getSession()
     return self.session
-end
-
-function Player:setZone(zone)
-    self.zone = zone
-    if zone then
-        self.mapId = self.zone:getMap().id
-    end
-end
-
-function Player:getZone()
-    return self.zone
-end
-
-function Player:getMap()
-    return self.zone and self.zone.map or nil
 end
 
 function Player:wear(item, slot)
@@ -141,8 +131,8 @@ function Player:toTable()
         dexterity = self.dexterity,
         vitality = self.vitality,
         intelligence = self.intelligence,
-        potentialPoints = self.potentialPoints,
-        skillPoints = self.skillPoints,
+        potential_points = self.potentialPoints,
+        skill_points = self.skillPoints,
         skill = JSON.fromTable(self.skills:map(function(skill) return skill.level end):toTable()),
         location = JSON.fromTable({
             x = self.x,

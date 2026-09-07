@@ -6,6 +6,7 @@ local GameWorld        = require "modules.game.world.GameWorld"
 local Player           = require "modules.game.entities.Player"
 local InventoryManager = require "modules.game.inventory.InventoryManager"
 local CharacterWritter = require "modules.writters.CharacterWritter"
+local Inventory        = require "modules.game.inventory.Inventory"
 local CharacterHandler = {}
 
 function CharacterHandler.onCreateChar(session, request)
@@ -66,6 +67,20 @@ function CharacterHandler.onCreateChar(session, request)
         return CommonWritter.noticeBox(session, "Character name already exists")
     end
 
+    -- Create the inventory with starter items
+    local starterItems = {
+        [3] = {},                         -- Equipment
+        [4] = { { 2, 300 }, { 1, 300 } }, -- Potion: id, quantity
+        [7] = { { 11, 50 }, { 12, 100 } } -- Material: id, quantity
+    }
+
+    local inventory = Inventory.new()
+    for itemType, ids in pairs(starterItems) do
+        for _, id in ipairs(ids) do
+            inventory:addFrom(id[1], itemType, id[2])
+        end
+    end
+
     local result, err = insertTable("player", {
         name = request.name:lower(),
         account_id = account.id,
@@ -75,9 +90,9 @@ function CharacterHandler.onCreateChar(session, request)
         gold = 1000,
         gem = 100,
         wearing = JSON.fromTable(wearing:toTable()),
-        inventory = "[]",
+        inventory = inventory:toJson(),
         bank = "[]",
-        location = JSON.fromTable({ map = 0, x = 132, y = 132 }),
+        location = JSON.fromTable({ map = 1, x = 134, y = 132 }),
         rms = "[[],[]]",
         strength = 5,
         dexterity = 5,

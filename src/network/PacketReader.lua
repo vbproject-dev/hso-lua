@@ -64,6 +64,13 @@ function PacketReader.onSaveRmsServer(packet)
     }
 end
 
+function PacketReader.onMove(packet)
+    return {
+        x = packet:readShort(),
+        y = packet:readShort(),
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
@@ -71,4 +78,6 @@ return {
     [Cmd.CREATE_CHAR] = PacketReader.onCreateChar,
     [Cmd.SELECT_CHAR] = PacketReader.onSelectChar,
     [Cmd.SAVE_RMS_SERVER] = PacketReader.onSaveRmsServer,
+
+    [Cmd.OBJECT_MOVE] = PacketReader.onMove,
 }

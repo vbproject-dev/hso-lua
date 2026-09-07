@@ -13,7 +13,7 @@ Server/
 
 This project is still under active development, and contributions are welcome! If you'd like to help, feel free to fork the repository, submit a pull request, report bugs, or suggest improvements. All contributions and feedback are greatly appreciated.
 
-# API
+# BINDING CLASS
 
 # GServer class exposed as server
 

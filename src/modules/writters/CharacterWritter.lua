@@ -78,10 +78,10 @@ function CharacterWritter.mainCharInfo(player)
         packet:writeShort(player.skill_points)
 
         -- STATS
-        packet:writeShort(5)
-        packet:writeShort(5)
-        packet:writeShort(5)
-        packet:writeShort(5)
+        packet:writeShort(player.strength)
+        packet:writeShort(player.dexterity)
+        packet:writeShort(player.vitality)
+        packet:writeShort(player.intelligence)
 
         -- Bonus STATS
         packet:writeShort(0)
@@ -99,9 +99,9 @@ function CharacterWritter.mainCharInfo(player)
             packet:writeByte(0)
         end)
 
-        packet:writeByte(0)   -- TypePK
-        packet:writeShort(0)  -- Point PK
-        packet:writeByte(126) -- MaxBag
+        packet:writeByte(player.typePK)   -- TypePK
+        packet:writeShort(player.pointPK) -- Point PK
+        packet:writeByte(126)             -- MaxBag
 
         -- Guild
         packet:writeShort(-1)
