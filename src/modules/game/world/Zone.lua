@@ -13,6 +13,9 @@ function Zone:ctor(map, id, maxPlayers)
     self.players = ArrayList.new()
     self.monsters = ArrayList.new()
     self.npcs = ArrayList.new()
+
+    self.visiblePlayers = {}
+    self.visibleMonsters = {}
 end
 
 function Zone:getId()
@@ -98,6 +101,7 @@ function Zone:removeMonster(monster)
     self.monsters:remove(monster)
     monster:setZone(nil)
 
+
     return true
 end
 
@@ -164,9 +168,79 @@ function Zone:broadcast(packet, exceptPlayer)
 end
 
 function Zone:update(dt)
-    self.players:forEach(function(p)
-        if p.update then
-            p:update(dt)
+    self.players:forEach(function(player)
+        if player.update then
+            player:update(dt)
+        end
+
+        self:updatePlayers(player)
+        self:updateMonsters(player)
+    end)
+end
+
+function Zone:isVisible(a, b, range)
+    return math.abs(a.x - b.x) < range
+        and math.abs(a.y - b.y) < range
+end
+
+function Zone:updatePlayers(player)
+    local visiblePlayers = self.visiblePlayers[player.id]
+
+    if not visiblePlayers then
+        visiblePlayers = {}
+        self.visiblePlayers[player.id] = visiblePlayers
+    end
+
+    self.players:forEach(function(other)
+        if other == player then
+            return
+        end
+
+        if self:isVisible(player, other, 200) then
+            if not visiblePlayers[other.id] then
+                visiblePlayers[other.id] = true
+
+                GameWritter.objectMove(player, other)
+            end
+
+            return
+        end
+
+        if visiblePlayers[other.id] then
+            visiblePlayers[other.id] = nil
+
+            GameWritter.removeObject(player, other.id)
+        end
+    end)
+end
+
+function Zone:updateMonsters(player)
+    local visibleMonsters = self.visibleMonsters[player.id]
+
+    if not visibleMonsters then
+        visibleMonsters = {}
+        self.visibleMonsters[player.id] = visibleMonsters
+    end
+
+    self.monsters:forEach(function(monster)
+        if monster.isDie then
+            return
+        end
+
+        if self:isVisible(player, monster, 200) then
+            if not visibleMonsters[monster.id] then
+                visibleMonsters[monster.id] = true
+
+                GameWritter.objectMove(player, monster)
+            end
+
+            return
+        end
+
+        if visibleMonsters[monster.id] then
+            visibleMonsters[monster.id] = nil
+
+            GameWritter.removeObject(player, monster.id)
         end
     end)
 end
@@ -193,6 +267,8 @@ function Zone:onPlayerJoin(player)
 end
 
 function Zone:onPlayerLeave(player)
+    self.visiblePlayers[player.id] = nil
+    self.visibleMonsters[player.id] = nil
     self:forEachPlayer(function(other)
         -- notify other
     end, player)

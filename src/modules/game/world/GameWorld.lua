@@ -141,4 +141,21 @@ function GameWorld:update(dt)
     end)
 end
 
+function GameWorld:removeAllSessions()
+    for session, player in pairs(self.playerSessions) do
+        if player then
+            if player.zone then
+                player.zone:removePlayer(player)
+                player.zone = nil
+            end
+            player.session:close()
+            player:setSession(nil)
+            player.online = false
+            self.playerList:remove(player)
+        end
+
+        self.playerSessions[session] = nil
+    end
+end
+
 return GameWorld

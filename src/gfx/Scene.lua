@@ -13,6 +13,11 @@ function Scene:loadUI(path)
     end
 end
 
+function Scene:addWidget(widget)
+    self.widgets[#self.widgets + 1] = widget
+    widget:sync()
+end
+
 -- Returns the top-level Canvas widget with this name, or nil.
 function Scene:getCanvas(name)
     for _, w in ipairs(self.widgets) do

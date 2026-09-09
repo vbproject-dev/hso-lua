@@ -15,21 +15,35 @@ function UIButton:ctor(x, y, width, height)
     self.cornerRadius = 6
     self._pressed     = false
     self.onClick      = nil
+    self.scale        = 1
 end
 
 function UIButton:draw(g)
+    local scale = self._pressed and 0.92 or 1
+    local cx = self._absX + self.width / 2
+    local cy = self._absY + self.height / 2
+
+    g:save()
+    g:translate(cx, cy)
+    g:scale(scale, scale)
+    g:translate(-cx, -cy)
+
     if self._bgImage then
         self:_drawBgImage(g)
     else
         local dr = self._pressed and -20 or 0
+
         g:setColor(self.r + dr, self.g + dr, self.b + dr, self.a)
         g:fillRoundRect(self._absX, self._absY, self.width, self.height, self.cornerRadius, self.cornerRadius)
-        self:_drawBgImage(g)
+
         g:setColor(math.max(0, self.r - 30), math.max(0, self.g - 30), math.max(0, self.b - 30), self.a)
         g:drawRoundRect(self._absX, self._absY, self.width, self.height, self.cornerRadius, self.cornerRadius)
     end
+
     g:setColor(self.textR, self.textG, self.textB, 255)
-    g:drawString(self.text, self._absX + self.width / 2, self._absY + self.height / 2, Graphics.CENTER)
+    g:drawString(self.text, cx, cy, Graphics.CENTER)
+
+    g:restore()
 end
 
 -- override render so bgImage is NOT drawn twice (we call it manually in draw)
@@ -44,6 +58,7 @@ end
 function UIButton:onPointerPressed(px, py)
     if self:contains(px, py) then
         self._pressed = true
+        self._scale = 0.92
         return true
     end
     return false
@@ -52,6 +67,7 @@ end
 function UIButton:onPointerReleased(px, py)
     if self._pressed then
         self._pressed = false
+        self._scale = 1
         if self:contains(px, py) and self.onClick then
             self.onClick(self)
         end

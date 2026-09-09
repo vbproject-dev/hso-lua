@@ -22,8 +22,8 @@ local GRID             = 8
 local SAVE_PATH        = "ui_layout.json"
 
 -- canvas virtual size (the "scene" space)
-local SCENE_W          = 1280
-local SCENE_H          = 720
+local SCENE_W          = SCREEN_WIDTH
+local SCENE_H          = SCREEN_HEIGHT
 
 -- zoom limits
 local ZOOM_MIN         = 0.1

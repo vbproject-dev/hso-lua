@@ -287,10 +287,14 @@ function UIImagePicker:render(g)
             end
 
             -- filename label
+            g:save()
+            local font = g:getFont()
+            font:setFontSize(12)
             g:setColor(0, 0, 0, 140)
             g:fillRect(tx, ty + THUMB_SIZE - 16, THUMB_SIZE, 16)
             g:setColor(200, 200, 200, 255)
             g:drawString(file.name, tx + THUMB_SIZE / 2, ty + THUMB_SIZE - 8, Graphics.CENTER)
+            g:restore()
         end
     end
 

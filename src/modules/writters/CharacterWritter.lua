@@ -1,5 +1,6 @@
 local Player           = require "modules.game.entities.Player"
 local Cmd              = require "network.Cmd"
+local StatIds          = require "modules.game.stats.StatIds"
 local CharacterWritter = {}
 
 function CharacterWritter.selectCharacter(session)
@@ -64,18 +65,50 @@ function CharacterWritter.mainCharInfo(player)
         packet:writeByte(player.part.eye)
         packet:writeByte(player.part.hair)
 
-        local attr = { 0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 28, 33, 34, 35, 36, 40, 29, 30, 31, 32, 181 }
+        local attributesInfo = {
+            StatIds.PHYSICAL_DAMAGE,
+            StatIds.ICE_DAMAGE,
+            StatIds.FIRE_DAMAGE,
+            StatIds.LIGHTNING_DAMAGE,
+            StatIds.POISON_DAMAGE,
+            StatIds.PLUS_PHYSICAL_DAMAGE,
+            StatIds.PLUS_ICE_DAMAGE,
+            StatIds.PLUS_FIRE_DAMAGE,
+            StatIds.PLUS_LIGHTNING_DAMAGE,
+            StatIds.PLUS_POISON_DAMAGE,
 
-        packet:writeByte(#attr)
-        for _, value in ipairs(attr) do
+            StatIds.DEFENSE,
+            StatIds.PLUS_DEFENSE,
+            StatIds.PHYSICAL_RESIST,
+            StatIds.ICE_RESIST,
+            StatIds.FIRE_RESIST,
+            StatIds.LIGHTNING_RESIST,
+            StatIds.POISON_RESIST,
+
+            StatIds.PLUS_MANA,
+            StatIds.CRITICAL_RATE,
+            StatIds.EVADE,
+            StatIds.REFLECT_DAM,
+            StatIds.PIERCING_ATTACK,
+            StatIds.BASIC_DAMAGE,
+
+            StatIds.REPLENISH_LIFE,
+            StatIds.REGENERATE_MANA,
+            StatIds.LIFE_STEAL,
+            StatIds.MANA_STEAL,
+
+        }
+
+        packet:writeByte(#attributesInfo)
+        for _, value in ipairs(attributesInfo) do
             packet:writeByte(value)
-            packet:writeInt(0)
+            packet:writeInt(player.stats:get(value))
         end
 
         packet:writeShort(player.level)
         packet:writeShort(0) -- EXP PERCENT
-        packet:writeShort(player.potential_points)
-        packet:writeShort(player.skill_points)
+        packet:writeShort(player.potentialPoints)
+        packet:writeShort(player.skillPoints)
 
         -- STATS
         packet:writeShort(player.strength)

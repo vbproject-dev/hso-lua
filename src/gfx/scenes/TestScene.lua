@@ -1,31 +1,28 @@
 local Scene = require "gfx.Scene"
-local HandlerRegistry = require "core.HandlerRegistry"
+local UICanvas = require "gfx.ui.components.UICanvas"
+local UIWidget = require "gfx.ui.UIWidget"
+local UIToolbar = require "gfx.ui.components.UIToolbar"
 local TestScene = class("TestScene", Scene)
 
 function TestScene:ctor()
     TestScene.super.ctor(self)
-    self:loadUI("ui_layout.json")
 
-    self.console = self:getWidget("log", "console")
-    self.reload = self:getWidget("log", "reload")
-    self.reload.onClick = function()
-        local modules = {
-            { module = "modules.handlers.CommonHandler" },
-            { module = "modules.handlers.LoginHandler" },
-            { module = "modules.handlers.CharacterHandler" },
-            { module = "modules.handlers.GameHandler" },
+    local canvas = UICanvas.new(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+
+    self:addWidget(UIWidget.fromComponent(canvas,
+        {
+            name = "canvas",
+            type = "Canvas"
         }
+    ))
 
-        HandlerRegistry.reload(modules)
-        local success, err = reloadPackage("modules")
-        if err then
-            log(err)
-        end
-    end
-end
-
-function TestScene:log(ste)
-    self.console:log(ste)
+    self:addWidget(UIWidget.fromComponent(UIToolbar.new(0, 0, SCREEN_WIDTH, 60),
+        {
+            name = "toolbar",
+            type = "Toolbar"
+        }
+    ))
 end
 
 function TestScene:render(g)

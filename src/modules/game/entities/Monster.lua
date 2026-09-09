@@ -10,6 +10,11 @@ function Monster:ctor(data)
     self.template = GameData.getMonster(data.tempId)
     self.x = data.x
     self.y = data.y
+
+    self.hp = self.template.hp
+    self.maxHp = self.template.hp
+    self.color = 1       -- 1: blue, 2: yellow
+    self.refreshTime = 3 -- 3 sec
 end
 
 return Monster

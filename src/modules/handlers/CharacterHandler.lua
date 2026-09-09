@@ -7,7 +7,9 @@ local Player           = require "modules.game.entities.Player"
 local CharacterWritter = require "modules.writters.CharacterWritter"
 local Inventory        = require "modules.game.inventory.Inventory"
 local GameWritter      = require "modules.writters.GameWritter"
+local HandlerGuard     = require "modules.handlers.HandlerGuard"
 local CharacterHandler = {}
+
 
 function CharacterHandler.onCreateChar(session, request)
     if #request.name < 4 or #request.name > 15 then
@@ -141,7 +143,7 @@ function CharacterHandler.onSelectChar(session, request)
     CommonWritter.sendBytes(session, Cmd.LOGIN, FileUtils.readBytes("msg/table_map"))
     GameWritter.updateInventory(player)
 
-    local map = GameWorld.instance():joinMap(player, player.mapId, 0)
+    local map = GameWorld.instance():joinMap(player, player.mapId)
     if not map then
         log("Failed to join map: " .. player.mapId)
         return CommonWritter.noticeBox(session, "Map not found")
@@ -161,7 +163,70 @@ function CharacterHandler.onSelectChar(session, request)
     return CommonWritter.fillRectUpdate(session, 5)
 end
 
+function CharacterHandler.onAddBaseSkillPoint(session, request)
+    return HandlerGuard.withPlayer(session, function(player)
+        if request.action == 0 then
+            -- Add Potential Points
+
+            if player.potentialPoints < request.value then
+                CommonWritter.noticeBox(session, "Potential point tidak cukup")
+                return
+            end
+
+            local index = request.index
+            if index == 0 then
+                player.strength = (player.strength + request.value)
+            elseif index == 1 then
+                player.dexterity = (player.dexterity + request.value)
+            elseif index == 2 then
+                player.vitality = (player.vitality + request.value)
+            elseif index == 3 then
+                player.intelligence = (player.intelligence + request.value)
+            end
+
+            player.potentialPoints = (player.potentialPoints - request.value)
+
+            -- TO DO: Recalculate stats
+
+            CharacterWritter.mainCharInfo(player)
+        else
+            -- Add Skill Points
+
+            local skill = player.skills:get(request.index)
+            if not skill then
+                CommonWritter.noticeBox(session, "Invalid skill")
+                return
+            end
+
+            if skill:isMaxLevel() then
+                CommonWritter.noticeBox(session, "Level sudah maximum")
+                return
+            end
+
+            if (player.skillPoints - request.value) < 0 then
+                CommonWritter.noticeBox(session, "Point skill tidak cukup")
+                return
+            end
+
+
+            if not skill:upgrade(player.level, request.value) then
+                CommonWritter.noticeBox(session, "Belum memenuhi persyaratan")
+                return
+            end
+            local value = math.max(0, math.min(request.value, 15))
+            player.skillPoints = player.skillPoints - value
+
+            if skill:isBuffSkill() then
+                -- TO DO Recalculate stats
+            end
+
+            CharacterWritter.mainCharInfo(player)
+        end
+    end)
+end
+
 return {
     [Cmd.CREATE_CHAR] = CharacterHandler.onCreateChar,
     [Cmd.SELECT_CHAR] = CharacterHandler.onSelectChar,
+    [Cmd.ADD_BASE_SKILL_POINT] = CharacterHandler.onAddBaseSkillPoint,
 }

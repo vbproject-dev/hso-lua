@@ -2,39 +2,28 @@ local Cmd           = require "network.Cmd"
 local GameWritter   = require "modules.writters.GameWritter"
 local GameWorld     = require "modules.game.world.GameWorld"
 local CommonWritter = require "modules.writters.CommonWritter"
+local HandlerGuard  = require "modules.handlers.HandlerGuard"
 local GameHandler   = {}
 
-local function withZone(session, callback)
-    local player = session:get("player")
-    if not player or not player:getZone() then
-        return false
-    end
-
-    local zone = player:getZone()
-    return try(function()
-        callback(player, zone)
-    end)
-end
 
 function GameHandler.onUseItem(session, request)
-    log("onUseItem index %d slot %d", request.index, request.slot)
-    return withZone(session, function(player, zone)
-        local item = player.inventory:get(request.index)
+    return HandlerGuard.withZone(session, function(player, zone)
+        local item = player.inventory:get(request.index, 3)
 
-        log("Item type %d", item.type)
         if not item then
             CommonWritter.noticeBox(session, "Item not found")
             return
         end
 
         if player:wear(item, request.slot) then
+            GameWritter.updateInventory(player)
             zone:broadcast(Packet.new(Cmd.CHAR_WEARING, player:wearingData()))
         end
     end)
 end
 
 function GameHandler.onMove(session, request)
-    return withZone(session, function(player, zone)
+    return HandlerGuard.withZone(session, function(player, zone)
         player:setPosition(request.x, request.y)
 
         local warp = zone.map:getWarpAt(request.x, request.y)
@@ -54,7 +43,47 @@ function GameHandler.onMove(session, request)
     end)
 end
 
+function GameHandler.onDeleteItem(session, request)
+    return HandlerGuard.withZone(session, function(player, zone)
+        local item = player.inventory:get(request.itemId, request.category)
+        if not item then
+            CommonWritter.noticeBox(session, "Item not found")
+            return
+        end
+
+        if request.action == 1 then
+            -- sell item
+            local GameData  = require "database.GameData"
+            local cfg       = GameData.getSetting("config")
+            local priceSell = (request.category == 4 or request.category == 7) and
+                (cfg.price_sell_potion * item.quantity) or
+                (cfg.price_sell_item * item.quantity)
+            player:addMoney(0, priceSell)
+        end
+
+        if not player.inventory:remove(item) then
+            CommonWritter.noticeBox(session, "Failed to delete item")
+            return
+        end
+
+        GameWritter.updateInventory(player)
+    end)
+end
+
+function GameHandler.onMonsterInfo(session, request)
+    return HandlerGuard.withZone(session, function(player, zone)
+        local monster = zone:getObject(1, request.id)
+        if not monster then
+            return
+        end
+
+        GameWritter.monsterInfo(player, monster)
+    end)
+end
+
 return {
     [Cmd.OBJECT_MOVE] = GameHandler.onMove,
     [Cmd.USE_ITEM] = GameHandler.onUseItem,
+    [Cmd.DELETE_ITEM] = GameHandler.onDeleteItem,
+    [Cmd.MONSTER_INFO] = GameHandler.onMonsterInfo,
 }

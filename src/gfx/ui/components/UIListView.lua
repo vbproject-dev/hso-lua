@@ -26,6 +26,7 @@ function UIListView:ctor(x, y, width, height)
     self.selTextB      = 255
     self.itemHeight    = ITEM_H
     self.onSelect      = nil -- callback(index, item)
+    self.onDrawItem    = nil
     self._scrollY      = 0
     self._dragging     = false
     self._dragStartY   = 0
@@ -78,12 +79,23 @@ function UIListView:draw(g)
             g:drawLine(self._absX + PAD, iy + self.itemHeight - 1,
                 self._absX + self.width - PAD, iy + self.itemHeight - 1)
 
-            if isSel then
-                g:setColor(self.selTextR, self.selTextG, self.selTextB, 255)
+            if self.onDrawItem then
+                self.onDrawItem(g, i, item, self._absX, iy, self.width, self.itemHeight, isSel)
             else
-                g:setColor(self.textR, self.textG, self.textB, 255)
+                if isSel then
+                    g:setColor(self.selTextR, self.selTextG, self.selTextB, 255)
+                else
+                    g:setColor(self.textR, self.textG, self.textB, 255)
+                end
+
+                g:drawString(
+                    tostring(item),
+                    self._absX + PAD,
+                    iy + self.itemHeight / 2,
+                    Graphics.CENTER_LEFT
+                )
             end
-            g:drawString(tostring(item), self._absX + PAD, iy + self.itemHeight / 2, Graphics.CENTER_LEFT)
+            -- g:drawString(tostring(item), self._absX + PAD, iy + self.itemHeight / 2, Graphics.CENTER_LEFT)
         end
     end
 
@@ -133,7 +145,8 @@ function UIListView:onPointerReleased(px, py)
 end
 
 function UIListView:onScrolled(scrollX, scrollY)
-    if not self:contains(scrollX, scrollY) then return false end
+    local x, y = Input.getX(), Input.getY()
+    if not self:contains(x, y) then return false end
 
     self._scrollY = math.max(0, math.min(self:_maxScroll(), self._scrollY - scrollY * self.itemHeight))
     return true

@@ -4,6 +4,7 @@ local Network         = require("network.Network")
 local HandlerRegistry = require("core.HandlerRegistry")
 local GameData        = require("database.GameData")
 local GameWorld       = require("modules.game.world.GameWorld")
+local ModuleRegistry  = require("core.ModuleRegistry")
 
 
 local GameServer          = class("GameServer")
@@ -47,14 +48,17 @@ function GameServer:init()
 
     GameWorld.instance():init()
 
-    local modules = {
+
+    local handlers = {
         { module = "modules.handlers.CommonHandler" },
         { module = "modules.handlers.LoginHandler" },
         { module = "modules.handlers.CharacterHandler" },
         { module = "modules.handlers.GameHandler" },
     }
 
-    HandlerRegistry.loadAll(modules)
+    HandlerRegistry.loadAll(handlers)
+
+    ModuleRegistry.loadPackage("modules.writters")
 
     self.network:start(config.server.port)
 

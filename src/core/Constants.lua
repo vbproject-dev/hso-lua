@@ -1,6 +1,6 @@
-local MySQL      = require "core.MySQL"
+local MySQL    = require "core.MySQL"
 
-_G.loadTable     = function(tableName, where)
+_G.loadTable   = function(tableName, where)
     local db = MySQL.instance()
     local query = db:from(tableName)
 
@@ -22,7 +22,7 @@ _G.loadTable     = function(tableName, where)
     return list
 end
 
-_G.updateTable   = function(tableName, data, where)
+_G.updateTable = function(tableName, data, where)
     local field, value = next(where)
     local db = MySQL.instance()
 
@@ -35,7 +35,7 @@ _G.updateTable   = function(tableName, data, where)
     return true
 end
 
-_G.findTable     = function(tableName, where)
+_G.findTable   = function(tableName, where)
     local field, value = next(where)
     local db = MySQL.instance()
     local data, err = db:from(tableName):where(field, value):getFirst()
@@ -47,7 +47,7 @@ _G.findTable     = function(tableName, where)
     return data
 end
 
-_G.insertTable   = function(tableName, data)
+_G.insertTable = function(tableName, data)
     local db = MySQL.instance()
     local result, err = db:from(tableName):insert(data)
 
@@ -58,7 +58,7 @@ _G.insertTable   = function(tableName, data)
     return result
 end
 
-_G.try           = function(func)
+_G.try         = function(func)
     local status, err = xpcall(func, debug.traceback)
 
     if not status then
@@ -68,24 +68,29 @@ _G.try           = function(func)
 
     return true
 end
-
-_G.reloadPackage = function(prefix)
+_G.reload      = function(name)
     local modules = {}
 
-    for name in pairs(package.loaded) do
-        if name == prefix or name:sub(1, #prefix + 1) == prefix .. "." then
-            modules[#modules + 1] = name
+    for moduleName in pairs(package.loaded) do
+        if moduleName == name
+            or moduleName:sub(1, #name + 1) == name .. "." then
+            modules[#modules + 1] = moduleName
         end
     end
 
-    for _, name in ipairs(modules) do
-        package.loaded[name] = nil
+    -- Unload
+    for _, moduleName in ipairs(modules) do
+        package.loaded[moduleName] = nil
     end
 
-    for _, name in ipairs(modules) do
-        local ok, err = pcall(require, name)
+    -- Reload
+    table.sort(modules)
+
+    for _, moduleName in ipairs(modules) do
+        local ok, err = pcall(require, moduleName)
+
         if not ok then
-            return false, name .. ": " .. tostring(err)
+            return false, moduleName .. ": " .. tostring(err)
         end
     end
 

@@ -1,37 +1,8 @@
---[[
-    StatDefs
+local GameData      = require("database.GameData")
+local StatIds       = require("modules.game.stats.StatIds")
 
-    Thin wrapper around GameData.options (your item_option table) that adds
-    the two things the stat engine needs beyond plain metadata lookup:
+local StatDefs      = {}
 
-      1. A memoized get(id)/isPercent(id)/bonusUpgrade(id) so StatManager
-         isn't doing a linear GameData.options:findFirst() scan on every
-         single stat access.
-
-      2. An EXPLICIT flat <-> percent-modifier pairing table.
-
-    IMPORTANT: pairing is intentionally NOT auto-derived from names (e.g.
-    stripping a "+ " prefix). The real item_option table reuses the same
-    name for unrelated ids in at least 21 places (id 61/124/125/126/127 are
-    all called "Enchanted", id 34 and 99 are both "Evade", id 16 and 102
-    are both "Physical resist", etc). Guessing pairs from names would
-    silently apply the wrong multiplier to the wrong stat. Instead, only
-    the pairs listed in FLAT_PERCENT_PAIRS below behave as
-    "final = flat * (1 + percent/100)" -- every other stat (crit rate,
-    evade, life steal, resists, proc chances, status flags, ...) is just
-    summed as-is across layers, which is what those columns actually mean
-    in this table.
-
-    If you add a new genuine flat/percent pair later, register it with
-    StatDefs.pair(flatId, percentId) -- e.g. during boot, right after
-    GameData.load().
-]]
-
-local GameData = require("modules.game.data.GameData")
-
-local StatDefs = {}
-
--- id -> id, built from FLAT_PERCENT_PAIRS below
 local flatToPercent = {}
 local percentToFlat = {}
 
@@ -40,30 +11,23 @@ function StatDefs.pair(flatId, percentId)
     percentToFlat[percentId] = flatId
 end
 
--- Known, verified pairs from the real item_option table (data/stat_defs.json):
---   0-6   elemental damage           <-> 7-13  "+ <Element> Damage" (%)
---   14    Defense                    <-> 15    "+ Defense" (%)
---   231   HP (max HP)                <-> 27    "+ Life" (%)
---   232   MP (max MP)                <-> 28    "+ Mana" (%)
 local FLAT_PERCENT_PAIRS = {
-    { 0, 7 },   -- Physical Damage <-> + Physical Damage
-    { 1, 8 },   -- Ice Damage <-> + Ice Damage
-    { 2, 9 },   -- Fire Damage <-> + Fire Damage
-    { 3, 10 },  -- Lightning Damage <-> + Lightning Damage
-    { 4, 11 },  -- Poison Damage <-> + Poison Damage
-    { 5, 12 },  -- Darknest Damage <-> + Darkest Damage
-    { 6, 13 },  -- Holy Damage <-> + Holy Damage
-    { 14, 15 }, -- Defense <-> + Defense
-    { 231, 27 },-- HP <-> + Life
-    { 232, 28 },-- MP <-> + Mana
+    { StatIds.PHYSICAL_DAMAGE,  StatIds.PLUS_PHYSICAL_DAMAGE },  -- Physical Damage <-> + Physical Damage
+    { StatIds.ICE_DAMAGE,       StatIds.PLUS_ICE_DAMAGE },       -- Ice Damage <-> + Ice Damage
+    { StatIds.FIRE_DAMAGE,      StatIds.PLUS_FIRE_DAMAGE },      -- Fire Damage <-> + Fire Damage
+    { StatIds.LIGHTNING_DAMAGE, StatIds.PLUS_LIGHTNING_DAMAGE }, -- Lightning Damage <-> + Lightning Damage
+    { StatIds.POISON_DAMAGE,    StatIds.PLUS_POISON_DAMAGE },    -- Poison Damage <-> + Poison Damage
+    { StatIds.DARKNEST_DAMAGE,  StatIds.PLUS_DARKEST_DAMAGE },   -- Darknest Damage <-> + Darkest Damage
+    { StatIds.HOLY_DAMAGE,      StatIds.PLUS_HOLY_DAMAGE },      -- Holy Damage <-> + Holy Damage
+    { StatIds.DEFENSE,          StatIds.PLUS_DEFENSE },          -- Defense <-> + Defense
+    { StatIds.HP,               StatIds.PLUS_LIFE },             -- HP <-> + Life
+    { StatIds.MP,               StatIds.PLUS_MANA },             -- MP <-> + Mana
 }
 for _, p in ipairs(FLAT_PERCENT_PAIRS) do
     StatDefs.pair(p[1], p[2])
 end
 
--- ---------------------------------------------------------------------
--- Lookup (memoized against GameData.options)
--- ---------------------------------------------------------------------
+
 
 local cache = {}
 

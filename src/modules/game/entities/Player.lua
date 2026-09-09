@@ -1,12 +1,16 @@
-local BaseObject    = require("modules.game.entities.BaseObject")
-local Equipment     = require("modules.game.items.Equipment")
-local Inventory     = require("modules.game.inventory.Inventory")
-local EquipType     = require("modules.game.items.EquipType")
-local CommonWritter = require("modules.writters.CommonWritter")
-local GameData      = require("database.GameData")
-local Skill         = require("modules.game.skill.Skill")
+local BaseObject        = require("modules.game.entities.BaseObject")
+local Equipment         = require("modules.game.items.Equipment")
+local Inventory         = require("modules.game.inventory.Inventory")
+local EquipType         = require("modules.game.items.EquipType")
+local CommonWritter     = require("modules.writters.CommonWritter")
+local GameData          = require("database.GameData")
+local Skill             = require("modules.game.skill.Skill")
+local StatManager       = require("modules.game.stats.StatManager")
+local StatIds           = require("modules.game.stats.StatIds")
+local AttributeFormulas = require("modules.game.stats.AttributeFormulas")
+local StatDefs          = require("modules.game.stats.StatDefs")
 
-local Player        = class("Player", BaseObject)
+local Player            = class("Player", BaseObject)
 
 function Player:ctor(data)
     Player.super.ctor(self, data)
@@ -24,6 +28,12 @@ function Player:ctor(data)
     self.dexterity = data.dexterity or 5
     self.vitality = data.vitality or 5
     self.intelligence = data.intelligence or 5
+
+    self.stats = StatManager.new()
+    self.stats:setDerivedFormula(function(flatSums, percentSums)
+        return AttributeFormulas.compute(flatSums, percentSums)
+    end)
+
     self.potentialPoints = data.potential_points or 0
     self.skillPoints = data.skill_points or 0
     self.typePK = -1
@@ -60,17 +70,19 @@ function Player:ctor(data)
         self.skills:add(Skill.new(level, skillData))
     end)
 
-    -- Stats
-    self.hp = 32000
-    self.maxHp = 32000
-    self.mp = 32000
-    self.maxMp = 32000
+    -- Game States
+    self.hp = 0
+    self.maxHp = 0
+    self.mp = 0
+    self.maxMp = 0
 
     self.online = false
     self.session = nil
 
     -- Game States
     self.lastWarpTime = 0
+
+    self:recalculateStats()
 end
 
 function Player:setSession(session)
@@ -89,6 +101,10 @@ function Player:wear(item, slot)
     slot = slot or EquipType.getSlot(item.info.type)
     if not slot then
         return CommonWritter.noticeBox(self.session, "Invalid equipment type")
+    end
+
+    if item.info.clazz ~= 5 and item.info.class ~= self.class then
+        return CommonWritter.noticeBox(self.session, "Invalid class")
     end
 
     local old = self.wearing:get(slot)
@@ -118,6 +134,50 @@ end
 
 function Player:isSlotEmpty(slot)
     return not self.wearing:get(slot)
+end
+
+function Player:useMoney(moneyType, amount)
+    amount = amount or 0
+
+    if amount <= 0 then
+        return false
+    end
+
+    if moneyType == 0 then
+        if self.gold < amount then
+            return false
+        end
+
+        self.gold = self.gold - amount
+        return true
+    elseif moneyType == 1 then
+        if self.gem < amount then
+            return false
+        end
+
+        self.gem = self.gem - amount
+        return true
+    end
+
+    return false
+end
+
+function Player:addMoney(moneyType, amount)
+    amount = amount or 0
+
+    if amount <= 0 then
+        return false
+    end
+
+    if moneyType == 0 then
+        self.gold = self.gold + amount
+        return true
+    elseif moneyType == 1 then
+        self.gem = self.gem + amount
+        return true
+    end
+
+    return false
 end
 
 function Player:toTable()
@@ -197,6 +257,44 @@ function Player:wearingData()
         packet:writeShort(id)
     end)
     return packet:getData()
+end
+
+function Player:recalculateStats()
+    self.stats.attributes:reset()
+    self.stats.equipment:reset()
+    self.stats.skills:reset()
+
+    self.stats.attributes:set(StatIds.STRENGTH, self.strength)
+    self.stats.attributes:set(StatIds.DEXTERITY, self.dexterity)
+    self.stats.attributes:set(StatIds.VITALITY, self.vitality)
+    self.stats.attributes:set(StatIds.INTELLIGENCE, self.intelligence)
+
+    self.wearing:forEach(function(item)
+        if item then
+            item.options:forEach(function(opt)
+                self.stats.equipment:set(opt.id, opt.value)
+            end)
+        end
+    end)
+
+
+    local pasiveSkills = self.skills:filter(function(skill) return skill.type == 2 and skill.level > 0 end) -- Collect pasive skills
+    pasiveSkills:forEach(function(skill)
+        local levelData = skill.levelData
+        if levelData then
+            for __, data in ipairs(levelData.options) do
+                self.stats.skills:set(data.id, data.value)
+            end
+        end
+    end)
+
+    local final = self.stats:calculate()
+
+    self.maxHp = final:get(StatIds.HP) or 0
+    self.maxMp = final:get(StatIds.MP) or 0
+
+    self.hp = self.maxHp
+    self.mp = self.maxMp
 end
 
 return Player

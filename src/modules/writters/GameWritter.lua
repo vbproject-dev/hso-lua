@@ -1,12 +1,12 @@
 local Cmd = require "network.Cmd"
 local GameWritter = {}
 
-function GameWritter.objectMove(other, mover)
-    local packet = Packet(Cmd.OJECT_MOVE)
+function GameWritter.objectMove(player, mover)
+    local packet = Packet.new(Cmd.OBJECT_MOVE)
     packet:writeByte(mover.type)
 
     if iskindof(mover, "Monster") then
-        packet:writeShort(mover.templateId)
+        packet:writeShort(mover.template.id)
     else
         packet:writeShort(0)
     end
@@ -14,9 +14,48 @@ function GameWritter.objectMove(other, mover)
     packet:writeShort(mover.id)
     packet:writeShort(mover.x)
     packet:writeShort(mover.y)
-    packet:writeByte(0)
+    packet:writeByte(-1)
 
-    other:send(packet)
+    player:send(packet)
+end
+
+function GameWritter.monsterInfo(player, monster)
+    local packet = Packet.new(Cmd.MONSTER_INFO)
+
+    packet:writeShort(monster.id)
+    packet:writeByte(monster.template.level)
+    packet:writeShort(monster.x)
+    packet:writeShort(monster.y)
+    packet:writeInt(monster.hp)
+    packet:writeInt(monster.maxHp)
+    if monster.template.id >= 89 and monster.template.id <= 92 then
+        packet:writeByte(monster.template.id - 43)
+    elseif monster.template.id == 151 then
+        packet:writeByte(65)
+    elseif monster.template.id == 152 then
+        packet:writeByte(66)
+    elseif monster.template.id == 154 then
+        packet:writeByte(64)
+    else
+        packet:writeByte(20)
+    end
+
+    packet:writeInt(monster.refreshTime)
+    packet:writeShort(-1) -- clan monster
+    packet:writeByte(0)
+    packet:writeByte(2)   -- speed
+    packet:writeByte(0)
+    packet:writeUTF("")
+    packet:writeLong(-11111)
+    packet:writeByte(monster.color)
+
+    player:send(packet)
+end
+
+function GameWritter.removeObject(player, objectId)
+    local packet = Packet(Cmd.REMOVE_ACTOR)
+    packet:writeShort(objectId)
+    player:send(packet)
 end
 
 function GameWritter.npcBig(player, npcs)
@@ -44,13 +83,12 @@ local function updateInventory(player, inventory, type)
     local packet = Packet.new(16)
     if type == 3 then
         packet:writeByte(0)
-        packet:writeByte(3)
+        packet:writeByte(type)
         packet:writeLong(player.gold)
         packet:writeInt(player.gem)
-        packet:writeByte(3)
+        packet:writeByte(type)
 
-        local equipments = inventory:findByCategory(3)
-        log("inventory 3 size %d", equipments:size())
+        local equipments = inventory:findByCategory(type)
         packet:writeByte(equipments:size())
 
         equipments:forEachIndexed(function(index, item)

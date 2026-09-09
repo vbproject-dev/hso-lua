@@ -11,8 +11,6 @@ function Equipment:ctor(data)
     self.color = data.color or self.info.color
     self.lock = data.lock or false
     self.expired = data.expired or 0
-
-    log("Equipment" .. self.info.type .. " created")
 end
 
 function Equipment.create(data)

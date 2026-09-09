@@ -17,6 +17,7 @@ local TYPES = {
     LABEL       = "Label",
     TEXTFIELD   = "TextField",
     CONSOLELOG  = "ConsoleLog",
+    TOOLBAR     = "Toolbar",
 }
 UIWidget.TYPES = TYPES
 
@@ -41,6 +42,7 @@ local DEFAULTS = {
     Label       = { width = 140, height = 28, r = 0, g = 0, b = 0 },
     TextField   = { width = 200, height = 32, r = 40, g = 40, b = 40 },
     ConsoleLog  = { width = 320, height = 160, r = 14, g = 14, b = 17 },
+    Toolbar     = { width = SCREEN_WIDTH, height = 48, r = 35, g = 35, b = 38 },
 }
 
 -- Mirrors UIComponent's own anchor table. Kept local/static here (rather than
@@ -258,6 +260,21 @@ function UIWidget:_buildComponent()
         c = UI.UIPanel.new(self.x, self.y, self.width, self.height)
         c.r, c.g, c.b, c.a = 0, 0, 0, 0
         c.clip = false
+    elseif t == TYPES.TOOLBAR then
+        c = UI.UIToolbar.new(self.x, self.y, self.width, self.height)
+
+        c.r, c.g, c.b, c.a = self.r, self.g, self.b, self.a
+
+        c.paddingLeft = self.paddingLeft
+        c.paddingTop = self.paddingTop
+        c.paddingRight = self.paddingRight
+        c.paddingBottom = self.paddingBottom
+
+        c.spacing = self.spacing
+        c.orientation = self.orientation
+        c.align = self.align
+        c.drawSeparators = self.drawSeparators
+        c.separatorSize = self.separatorSize
     end
 
     c.anchor = self.anchor
@@ -491,7 +508,26 @@ function UIWidget:destroy()
     if self.component then self.component:dispose() end
 end
 
--- ─── JSON ────────────────────────────────────────────────────────────────────
+function UIWidget.fromComponent(component, data)
+    data = data or {}
+
+    local w = UIWidget.new(data.type or "Custom")
+
+    w.component = component
+
+    w.x = data.x or component.x or 0
+    w.y = data.y or component.y or 0
+    w.width = data.width or component.width
+    w.height = data.height or component.height
+
+    w.anchor = data.anchor or component.anchor or Graphics.TOP_LEFT
+
+    w.name = data.name or (w.type .. "_" .. nextId())
+
+    w:syncToComponent()
+
+    return w
+end
 
 function UIWidget:toTable()
     local t = {

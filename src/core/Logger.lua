@@ -15,7 +15,7 @@ _G.log = function(format, ...)
             scene:log(msg)
         end
     else
-        print(msg)
+        FileUtils.writeText("AppLog.txt", msg .. "\n", true)
     end
 end
 

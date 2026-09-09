@@ -40,7 +40,7 @@ function Inventory:add(item)
     if not item then return false end
 
     if item.category == 4 or item.category == 7 then
-        local existing = self:findById(item.id)
+        local existing = self:findById(item.id, item.category)
         if existing then
             existing.quantity = math.min(existing.quantity + item.quantity, 3200)
             return true
@@ -53,12 +53,12 @@ function Inventory:add(item)
     return true
 end
 
-function Inventory:addFrom(id, type, quantity)
+function Inventory:addFrom(id, category, quantity)
     local item
 
-    if type == 4 then
+    if category == 4 then
         item = Potion.new({ id = id, quantity = quantity or 1 })
-    elseif type == 7 then
+    elseif category == 7 then
         item = Material.new({ id = id, quantity = quantity or 1 })
     else
         item = Equipment.new({ id = id })
@@ -70,11 +70,11 @@ end
 function Inventory:remove(item, quantity)
     if not item then return false end
 
-    local existing = self:findById(item.id)
+    local existing = self:findById(item.id, item.category)
     if not existing then return false end
 
     if existing.category == 4 or existing.category == 7 then
-        existing.quantity = existing.quantity - (quantity or 1)
+        existing.quantity = existing.quantity - (quantity or item.quantity) -- Remove completly if no given quantity
         if existing.quantity <= 0 then
             self.data:remove(existing)
         end
@@ -84,23 +84,47 @@ function Inventory:remove(item, quantity)
     return self.data:remove(existing)
 end
 
-function Inventory:get(index)
-    return self.data:get(index)
+function Inventory:get(index, category)
+    local current = 0
+
+    return self.data:findFirst(function(item)
+        if item.category ~= category then
+            return false
+        end
+
+        if current == index then
+            return true
+        end
+
+        current = current + 1
+        return false
+    end)
 end
 
 function Inventory:find(predicate)
     return self.data:findFirst(predicate)
 end
 
-function Inventory:findById(id)
+function Inventory:findById(id, category)
     return self.data:findFirst(function(item)
-        return item.id == id
+        return item.id == id and item.category == category
     end)
 end
 
 function Inventory:findByCategory(category)
     return self.data:filter(function(item)
         return item.category == category
+    end)
+end
+
+function Inventory:forEachCategory(category, callback)
+    local index = 0
+
+    self.data:forEach(function(item)
+        if item.category == category then
+            callback(index, item)
+            index = index + 1
+        end
     end)
 end
 

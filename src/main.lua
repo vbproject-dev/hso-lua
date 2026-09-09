@@ -6,15 +6,15 @@ local SceneManager = require "gfx.SceneManager"
 
 local Main = class("Main")
 
-local useGfx = true
+
 function Main:ctor()
     self.gameServer = nil
 end
 
 function Main:configure()
-    _G.SCREEN_WIDTH = 800
-    _G.SCREEN_HEIGHT = 480
-    GFX = false
+    _G.SCREEN_WIDTH = 900  --1280
+    _G.SCREEN_HEIGHT = 480 --720
+    GFX = true
     return {
         useGraphics = GFX,
         title = "HSO",
@@ -28,7 +28,7 @@ function Main:init()
     self.gameServer:init()
     if GFX then
         gfx:setFont(Font.create("fonts/JetBrainsMono-Regular.ttf", FontStyle.BOLD, 16))
-        SceneManager.getInstance():setScene(require("gfx.scenes.MainScene").new())
+        SceneManager.getInstance():setScene(require("gfx.scenes.LogScene").new())
     end
 end
 

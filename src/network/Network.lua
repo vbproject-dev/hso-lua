@@ -1,10 +1,17 @@
 local HandlerRegistry = require("core.HandlerRegistry")
 local Cmd             = require("network.Cmd")
+local ModuleRegistry  = require("core.ModuleRegistry")
 
-local Network         = class("Network")
+
+local MAX_PACKETS_PER_SECOND = 15
+local BAN_SECONDS = 60
+
+local Network = class("Network")
 
 function Network:ctor(onDisconnect)
     self.onDisconnect = onDisconnect
+    self.rateLimits = {}
+    self.blockedIps = {}
 end
 
 function Network:start(port)
@@ -13,14 +20,25 @@ function Network:start(port)
 
     server:setHandler({
         onConnect = function(session)
-            log("[Network] %s connected", session:getRemoteAddress())
+            local ip = session:getRemoteAddress():match("^(.-):%d+$")
+            log("[Network] %s connected", ip)
         end,
 
         onMessage = function(session, packet)
+            if not self:allowPacket(session) then
+                local ip = session:getRemoteAddress():match("^(.-):%d+$")
+                log("[Network] Blocking IP %s for packet flooding", ip)
+                self:blockIp(ip)
+
+                session:close()
+                return
+            end
+
             self:handle(session, packet)
         end,
 
         onDisconnect = function(session)
+            self.rateLimits[session] = nil
             if self.onDisconnect then
                 self.onDisconnect(session)
             end
@@ -34,6 +52,52 @@ function Network:start(port)
     server:start()
 end
 
+function Network:allowPacket(session)
+    local now = os.time()
+    local rate = self.rateLimits[session]
+
+    if not rate then
+        rate = {
+            count = 0,
+            time = now
+        }
+
+        self.rateLimits[session] = rate
+    end
+
+    if now ~= rate.time then
+        rate.time = now
+        rate.count = 0
+    end
+
+    rate.count = rate.count + 1
+
+    if rate.count > MAX_PACKETS_PER_SECOND then
+        return false
+    end
+
+    return true
+end
+
+function Network:blockIp(ip)
+    self.blockedIps[ip] = os.time() + BAN_SECONDS
+end
+
+function Network:isBlocked(ip)
+    local expiresAt = self.blockedIps[ip]
+
+    if not expiresAt then
+        return false
+    end
+
+    if os.time() >= expiresAt then
+        self.blockedIps[ip] = nil
+        return false
+    end
+
+    return true
+end
+
 function Network:handle(session, packet)
     local command = packet:getCmd()
     local handler = HandlerRegistry.get(command)
@@ -43,7 +107,7 @@ function Network:handle(session, packet)
         return false
     end
 
-    local PacketReader = require("network.PacketReader")
+    local PacketReader = ModuleRegistry.get("network.PacketReader")
     local reader = PacketReader[command]
     local request = reader and reader(packet) or {}
 

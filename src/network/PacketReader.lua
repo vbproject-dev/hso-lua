@@ -78,6 +78,36 @@ function PacketReader.onUseItem(packet)
     }
 end
 
+function PacketReader.onDeleteItem(packet)
+    return {
+        category = packet:readByte(),
+        itemId = packet:readByte(),
+        action = packet:readByte(),
+    }
+end
+
+function PacketReader.onAddBaseSkillPoint(packet)
+    return {
+        action = packet:readByte(),
+        index = packet:readByte(),
+        value = packet:available() > 0 and packet:readShort() or 1
+    }
+end
+
+function PacketReader.onNpcInfo(packet)
+    return {
+        -- action = packet:readByte(),
+        -- index = packet:readByte(),
+        -- value = packet:available() > 0 and packet:readShort() or 1
+    }
+end
+
+function PacketReader.onMonsterInfo(packet)
+    return {
+        id = packet:readShort()
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
@@ -88,4 +118,8 @@ return {
 
     [Cmd.OBJECT_MOVE] = PacketReader.onMove,
     [Cmd.USE_ITEM] = PacketReader.onUseItem,
+    [Cmd.DELETE_ITEM] = PacketReader.onDeleteItem,
+    [Cmd.ADD_BASE_SKILL_POINT] = PacketReader.onAddBaseSkillPoint,
+    [Cmd.NPC_INFO] = PacketReader.onNpcInfo,
+    [Cmd.MONSTER_INFO] = PacketReader.onMonsterInfo,
 }

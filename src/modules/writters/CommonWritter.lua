@@ -90,7 +90,7 @@ function CommonWritter.itemTemplate(session)
         GameData.options:forEach(function(op)
             packet:writeUTF(op.name)
             packet:writeByte(op.color)
-            packet:writeByte(op.percent and 1 or 0)
+            packet:writeByte(op.percent)
         end)
 
         -- ITEM MATERIAL
@@ -238,8 +238,6 @@ function CommonWritter.listSkill(session)
             packet:writeUTF(skill.description)
             packet:writeByte(skill.buff_type)
             packet:writeByte(skill.sub_effect_type)
-
-            log("levels size %d for %d", #skill.levels, skill.sid)
             packet:writeByte(#skill.levels)
             for _, lv in ipairs(skill.levels) do
                 packet:writeShort(lv.mpCost)

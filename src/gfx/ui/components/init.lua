@@ -13,4 +13,5 @@ return {
     UIListView    = require("gfx.ui.components.UIListView"),
     UITooltip     = require("gfx.ui.components.UITooltip"),
     UIConsole     = require("gfx.ui.components.UIConsole"),
+    UIToolbar     = require("gfx.ui.components.UIToolbar"),
 }
