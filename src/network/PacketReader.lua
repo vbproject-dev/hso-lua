@@ -96,9 +96,7 @@ end
 
 function PacketReader.onNpcInfo(packet)
     return {
-        -- action = packet:readByte(),
-        -- index = packet:readByte(),
-        -- value = packet:available() > 0 and packet:readShort() or 1
+        id = packet:readByte()
     }
 end
 

@@ -3,6 +3,7 @@ local GameWritter   = require "modules.writters.GameWritter"
 local GameWorld     = require "modules.game.world.GameWorld"
 local CommonWritter = require "modules.writters.CommonWritter"
 local HandlerGuard  = require "modules.handlers.HandlerGuard"
+local NpcRegistry   = require "core.NpcRegistry"
 local GameHandler   = {}
 
 
@@ -81,9 +82,22 @@ function GameHandler.onMonsterInfo(session, request)
     end)
 end
 
+function GameHandler.onNpcInfo(session, request)
+    return HandlerGuard.withZone(session, function(player, zone)
+        local script = NpcRegistry.get(request.id)
+        if not script or not script.onTalk then
+            CommonWritter.noticeBox(session, "Script has not setted")
+            return
+        end
+
+        script.onTalk(player, zone, request.id)
+    end)
+end
+
 return {
     [Cmd.OBJECT_MOVE] = GameHandler.onMove,
     [Cmd.USE_ITEM] = GameHandler.onUseItem,
     [Cmd.DELETE_ITEM] = GameHandler.onDeleteItem,
     [Cmd.MONSTER_INFO] = GameHandler.onMonsterInfo,
+    [Cmd.NPC_INFO] = GameHandler.onNpcInfo,
 }

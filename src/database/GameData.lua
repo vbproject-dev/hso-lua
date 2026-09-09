@@ -7,6 +7,7 @@ local GameData = {
     options = ArrayList.new(),
     maps = ArrayList.new(),
     npcs = ArrayList.new(),
+    shops = ArrayList.new(),
 
     skills = {
         [0] = ArrayList.new(),
@@ -26,6 +27,7 @@ function GameData.load()
         { table = "item_option",    field = "options" },
         { table = "map_data",       field = "maps" },
         { table = "npc",            field = "npcs" },
+        { table = "shop",           field = "shops" },
         { table = "skill",          field = "skills",    groupBy = "role" }
     }
 
@@ -83,6 +85,10 @@ end
 
 function GameData.getOption(id)
     return GameData.options:findFirst(function(data) return data.id == id end)
+end
+
+function GameData.getShop(id)
+    return GameData.shops:findFirst(function(data) return data.npc_id == id end)
 end
 
 return GameData

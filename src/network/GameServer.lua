@@ -5,6 +5,8 @@ local HandlerRegistry = require("core.HandlerRegistry")
 local GameData        = require("database.GameData")
 local GameWorld       = require("modules.game.world.GameWorld")
 local ModuleRegistry  = require("core.ModuleRegistry")
+local NpcRegistry     = require("core.NpcRegistry")
+local Helper          = require("utils.Helper")
 
 
 local GameServer          = class("GameServer")
@@ -48,17 +50,24 @@ function GameServer:init()
 
     GameWorld.instance():init()
 
-
+    -- Network Writters
+    ModuleRegistry.loadPackage("modules.writters")
+    -- Network Handlers
     local handlers = {
         { module = "modules.handlers.CommonHandler" },
         { module = "modules.handlers.LoginHandler" },
         { module = "modules.handlers.CharacterHandler" },
         { module = "modules.handlers.GameHandler" },
     }
-
     HandlerRegistry.loadAll(handlers)
 
-    ModuleRegistry.loadPackage("modules.writters")
+    -- Npc Handlers
+    if GameData.npcs then
+        GameData.npcs:forEach(function(npc)
+            local scriptName = Helper.trim(npc.name)
+            NpcRegistry.load(npc.id, "modules.game.npc." .. scriptName)
+        end)
+    end
 
     self.network:start(config.server.port)
 

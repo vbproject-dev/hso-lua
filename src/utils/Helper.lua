@@ -10,4 +10,8 @@ function Helper.stringToTable(str)
     return data
 end
 
+function Helper.trim(value)
+    return value:gsub("[^%w]", "")
+end
+
 return Helper

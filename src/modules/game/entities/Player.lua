@@ -9,12 +9,13 @@ local StatManager       = require("modules.game.stats.StatManager")
 local StatIds           = require("modules.game.stats.StatIds")
 local AttributeFormulas = require("modules.game.stats.AttributeFormulas")
 local StatDefs          = require("modules.game.stats.StatDefs")
+local ObjectType        = require("modules.game.entities.ObjectType")
 
 local Player            = class("Player", BaseObject)
 
 function Player:ctor(data)
     Player.super.ctor(self, data)
-    self.type = 0
+    self.type = ObjectType.PLAYER
     self.id = data.id or 0
     self.accountId = data.account_id or 0
     self.class = data.class or 0
@@ -81,7 +82,7 @@ function Player:ctor(data)
 
     -- Game States
     self.lastWarpTime = 0
-
+    self.shop = nil
     self:recalculateStats()
 end
 

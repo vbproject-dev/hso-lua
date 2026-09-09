@@ -53,7 +53,7 @@ function GameWritter.monsterInfo(player, monster)
 end
 
 function GameWritter.removeObject(player, objectId)
-    local packet = Packet(Cmd.REMOVE_ACTOR)
+    local packet = Packet.new(Cmd.REMOVE_ACTOR)
     packet:writeShort(objectId)
     player:send(packet)
 end
