@@ -88,7 +88,17 @@ function GameData.getOption(id)
 end
 
 function GameData.getShop(id)
-    return GameData.shops:findFirst(function(data) return data.npc_id == id end)
+    return GameData.shops:findFirst(function(data) return data.id == id end)
+end
+
+function GameData.getItem(id, category)
+    if category == 3 then
+        return GameData.getEquipment(id)
+    elseif category == 7 then
+        return GameData.getMaterial(id)
+    elseif category == 4 then
+        return GameData.getPotion(id)
+    end
 end
 
 return GameData

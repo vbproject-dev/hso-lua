@@ -1,14 +1,15 @@
 require "core.Class"
 require "core.Logger"
 require "core.Constants"
-local GameServer = require "network.GameServer"
+local GameServer   = require "network.GameServer"
 local SceneManager = require "gfx.SceneManager"
-
-local Main = class("Main")
+local WebServer    = require "network.WebServer"
+local Main         = class("Main")
 
 
 function Main:ctor()
     self.gameServer = nil
+    self.webServer = nil
 end
 
 function Main:configure()
@@ -24,16 +25,19 @@ function Main:configure()
 end
 
 function Main:init()
-    self.gameServer = GameServer.new()
-    self.gameServer:init()
     if GFX then
         gfx:setFont(Font.create("fonts/JetBrainsMono-Regular.ttf", FontStyle.BOLD, 16))
         SceneManager.getInstance():setScene(require("gfx.scenes.LogScene").new())
     end
+    self.gameServer = GameServer.new()
+    self.gameServer:init()
+    self.webServer = WebServer.new()
+    self.webServer:init()
 end
 
 function Main:onUpdate(dt)
     self.gameServer:update(dt)
+    self.webServer:update(dt)
 
     if GFX then
         SceneManager.getInstance():update(dt)

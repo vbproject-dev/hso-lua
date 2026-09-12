@@ -10,6 +10,7 @@ local StatIds           = require("modules.game.stats.StatIds")
 local AttributeFormulas = require("modules.game.stats.AttributeFormulas")
 local StatDefs          = require("modules.game.stats.StatDefs")
 local ObjectType        = require("modules.game.entities.ObjectType")
+local Combat            = require("modules.game.combat.Combat")
 
 local Player            = class("Player", BaseObject)
 
@@ -30,9 +31,9 @@ function Player:ctor(data)
     self.vitality = data.vitality or 5
     self.intelligence = data.intelligence or 5
 
-    self.stats = StatManager.new()
-    self.stats:setDerivedFormula(function(flatSums, percentSums)
-        return AttributeFormulas.compute(flatSums, percentSums)
+    self.stats = StatManager.new(self.class)
+    self.stats:setDerivedFormula(function(class, flatSums, percentSums)
+        return AttributeFormulas.compute(class, flatSums, percentSums)
     end)
 
     self.potentialPoints = data.potential_points or 0
@@ -76,13 +77,15 @@ function Player:ctor(data)
     self.maxHp = 0
     self.mp = 0
     self.maxMp = 0
-
+    self.bonusAtkSkill = 0
+    self.bonusBuffSkill = 0
     self.online = false
     self.session = nil
 
     -- Game States
     self.lastWarpTime = 0
     self.shop = nil
+    self.menu = nil
     self:recalculateStats()
 end
 
@@ -104,7 +107,7 @@ function Player:wear(item, slot)
         return CommonWritter.noticeBox(self.session, "Invalid equipment type")
     end
 
-    if item.info.clazz ~= 5 and item.info.class ~= self.class then
+    if item.info.role ~= 5 and item.info.role ~= self.class then
         return CommonWritter.noticeBox(self.session, "Invalid class")
     end
 
@@ -117,7 +120,7 @@ function Player:wear(item, slot)
     self.inventory:remove(item)
     if old then self.inventory:add(old) end
     self.wearing:set(slot, item)
-
+    self:recalculateStats()
     return true
 end
 
@@ -126,6 +129,7 @@ function Player:unwear(slot)
     if not item then return nil end
 
     self.wearing:set(slot, nil)
+    self:recalculateStats()
     return item
 end
 
@@ -181,40 +185,6 @@ function Player:addMoney(moneyType, amount)
     return false
 end
 
-function Player:toTable()
-    return {
-        class = self.class,
-        level = self.level,
-        exp = self.exp,
-        gold = self.gold,
-        gem = self.gem,
-        strength = self.strength,
-        dexterity = self.dexterity,
-        vitality = self.vitality,
-        intelligence = self.intelligence,
-        potential_points = self.potentialPoints,
-        skill_points = self.skillPoints,
-        skill = JSON.fromTable(self.skills:map(function(skill) return skill.level end):toTable()),
-        location = JSON.fromTable({
-            x = self.x,
-            y = self.y,
-            map = self.mapId
-        }),
-        part = JSON.fromTable(self.part),
-        rms = JSON.fromTable(self.rms),
-
-        -- Filter only non null value
-        wearing = JSON.fromTable(self.wearing:filter(function(item)
-            return item ~= nil
-        end):toTable(function(item)
-            return item:toWearingTable()
-        end)),
-
-        inventory = self.inventory:toJson(),
-        bank = self.bank:toJson()
-    }
-end
-
 function Player:send(packet)
     if self.session then
         self.session:send(packet)
@@ -260,6 +230,26 @@ function Player:wearingData()
     return packet:getData()
 end
 
+function Player:resetAttributes()
+    self.strength = 4
+    self.dexterity = 4
+    self.vitality = 4
+    self.intelligence = 4
+    self.potentialPoints = (self.level - 1) * 4
+    self:recalculateStats()
+end
+
+function Player:resetSkills()
+    self.skills:forEach(function(skill)
+        skill.level = skill.id == 0 and 1 or 0
+    end)
+
+    self.skillPoints = self.level
+    self:recalculateStats()
+
+    return true
+end
+
 function Player:recalculateStats()
     self.stats.attributes:reset()
     self.stats.equipment:reset()
@@ -273,7 +263,7 @@ function Player:recalculateStats()
     self.wearing:forEach(function(item)
         if item then
             item.options:forEach(function(opt)
-                self.stats.equipment:set(opt.id, opt.value)
+                self.stats.equipment:add(opt.id, opt.value)
             end)
         end
     end)
@@ -284,7 +274,7 @@ function Player:recalculateStats()
         local levelData = skill.levelData
         if levelData then
             for __, data in ipairs(levelData.options) do
-                self.stats.skills:set(data.id, data.value)
+                self.stats.skills:add(data.id, data.value)
             end
         end
     end)
@@ -293,9 +283,61 @@ function Player:recalculateStats()
 
     self.maxHp = final:get(StatIds.HP) or 0
     self.maxMp = final:get(StatIds.MP) or 0
-
     self.hp = self.maxHp
     self.mp = self.maxMp
+
+    self.bonusAtkSkill = final:get(StatIds.ATTACK_SKILL) or 0
+    self.bonusBuffSkill = final:get(StatIds.DEFEND_SKILL) or 0
+    self.skills:forEach(function(skill)
+        skill:applyBonusLevel(skill:isBuffSkill() and self.bonusBuffSkill or self.bonusAtkSkill)
+    end)
+end
+
+function Player:useSkill(skill, target)
+    if not skill or skill.level <= 0 then return false end
+    if not target then return false end
+
+    if skill:isOnCooldown() then return false end
+    if self.mp < skill.levelData.mpCost then return false end
+
+    self.mp = math.max(0, self.mp - skill.levelData.mpCost)
+
+    Combat.dealDamageTo(self, target, skill)
+    skill:onUse()
+end
+
+function Player:toTable()
+    return {
+        class = self.class,
+        level = self.level,
+        exp = self.exp,
+        gold = self.gold,
+        gem = self.gem,
+        strength = self.strength,
+        dexterity = self.dexterity,
+        vitality = self.vitality,
+        intelligence = self.intelligence,
+        potential_points = self.potentialPoints,
+        skill_points = self.skillPoints,
+        skill = JSON.fromTable(self.skills:map(function(skill) return skill.level end):toTable()),
+        location = JSON.fromTable({
+            x = self.x,
+            y = self.y,
+            map = self.mapId
+        }),
+        part = JSON.fromTable(self.part),
+        rms = JSON.fromTable(self.rms),
+
+        -- Filter only non null value
+        wearing = JSON.fromTable(self.wearing:filter(function(item)
+            return item ~= nil
+        end):toTable(function(item)
+            return item:toWearingTable()
+        end)),
+
+        inventory = self.inventory:toJson(),
+        bank = self.bank:toJson()
+    }
 end
 
 return Player

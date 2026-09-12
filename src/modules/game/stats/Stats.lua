@@ -1,11 +1,3 @@
---[[
-    Stats
-
-    A plain id -> value bag. This is your original class, unchanged, with
-    one addition: `mergeInto(target)`, used by StatManager to fold several
-    Stats layers (base / equipment / buffs) together.
-]]
-
 local Stats = class("Stats")
 
 function Stats:ctor()
@@ -49,16 +41,6 @@ function Stats:mergeInto(target)
     for id, value in pairs(self.data) do
         target:add(id, value)
     end
-end
-
--- Convenience for debugging / logging.
-function Stats:toString(StatDefs)
-    local parts = {}
-    for id, value in pairs(self.data) do
-        local name = StatDefs and StatDefs.get(id) and StatDefs.get(id).name or ("id=" .. tostring(id))
-        table.insert(parts, string.format("%s=%s", name, tostring(value)))
-    end
-    return table.concat(parts, ", ")
 end
 
 return Stats

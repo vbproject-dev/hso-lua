@@ -9,6 +9,12 @@ function Material:ctor(data)
     self.info = GameData.getMaterial(self.id)
 end
 
+function Material.create(data)
+    local info = GameData.getMaterial(data.id)
+    if not info then return nil end
+    return Material.new(info)
+end
+
 function Material:toTable()
     return {
         id = self.id,

@@ -117,10 +117,10 @@ function CharacterWritter.mainCharInfo(player)
         packet:writeShort(player.intelligence)
 
         -- Bonus STATS
-        packet:writeShort(0)
-        packet:writeShort(0)
-        packet:writeShort(0)
-        packet:writeShort(0)
+        packet:writeShort(player.stats:getBonusAttribute(StatIds.STRENGTH))
+        packet:writeShort(player.stats:getBonusAttribute(StatIds.DEXTERITY))
+        packet:writeShort(player.stats:getBonusAttribute(StatIds.VITALITY))
+        packet:writeShort(player.stats:getBonusAttribute(StatIds.INTELLIGENCE))
 
         -- Skill lv
         player.skills:forEach(function(skill)
@@ -129,7 +129,8 @@ function CharacterWritter.mainCharInfo(player)
 
         -- Bonus skill lv , dummy for now
         player.skills:forEach(function(skill)
-            packet:writeByte(0)
+            local bonus = skill:isBuffSkill() and player.bonusBuffSkill or player.bonusAtkSkill
+            packet:writeByte(skill:isMaxLevel() and 0 or bonus)
         end)
 
         packet:writeByte(player.typePK)   -- TypePK

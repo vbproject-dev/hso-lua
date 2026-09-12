@@ -186,7 +186,7 @@ function CharacterHandler.onAddBaseSkillPoint(session, request)
 
             player.potentialPoints = (player.potentialPoints - request.value)
 
-            -- TO DO: Recalculate stats
+            player:recalculateStats()
 
             CharacterWritter.mainCharInfo(player)
         else
@@ -217,7 +217,7 @@ function CharacterHandler.onAddBaseSkillPoint(session, request)
             player.skillPoints = player.skillPoints - value
 
             if skill:isBuffSkill() then
-                -- TO DO Recalculate stats
+                player:recalculateStats()
             end
 
             CharacterWritter.mainCharInfo(player)

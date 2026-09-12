@@ -25,12 +25,6 @@ function LogScene:ctor()
 
         HandlerRegistry.reload(handlers)
     end
-
-    self.clear = self:getWidget("log", "clear")
-    self.clear.onClick = function()
-        local GameWorld = require "modules.game.world.GameWorld"
-        GameWorld.instance():removeAllSessions()
-    end
 end
 
 function LogScene:log(ste)

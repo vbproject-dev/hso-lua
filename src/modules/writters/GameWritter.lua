@@ -1,4 +1,6 @@
 local Cmd = require "network.Cmd"
+local GameData = require "database.GameData"
+local PartManager = require "database.PartManager"
 local GameWritter = {}
 
 function GameWritter.objectMove(player, mover)
@@ -149,10 +151,104 @@ local function updateInventory(player, inventory, type)
     player:send(packet)
 end
 
+function GameWritter.openShop(player)
+    local shop = player.shop
+    if shop.category == 3 then
+        local packet = Packet.new(Cmd.NPC_INFO)
+        packet:writeUTF(shop.name)
+        packet:writeByte(1)
+        packet:writeShort(shop.items:size())
+        shop.items:forEach(function(itemData)
+            local equipment = GameData.getEquipment(itemData.id)
+            packet:writeShort(equipment.id)
+            packet:writeUTF(equipment.name)
+            packet:writeByte(equipment.role)
+            packet:writeByte(equipment.type)
+            packet:writeShort(equipment.icon)
+            packet:writeLong(itemData.price)
+            packet:writeShort(equipment.level)
+            packet:writeByte(equipment.color)
+            packet:writeByte(#equipment.options)
+            for __, opt in pairs(equipment.options) do
+                packet:writeByte(opt.id)
+                packet:writeInt(opt.value)
+            end
+
+            packet:writeByte(itemData.priceType)
+        end)
+
+        player:send(packet)
+    elseif shop.category == 4 then
+        local packet = Packet.new(Cmd.NPC_INFO)
+        packet:writeUTF(shop.name)
+        packet:writeByte(0)
+        packet:writeShort(shop.items:size())
+        shop.items:forEach(function(itemData)
+            packet:writeShort(itemData.id)
+        end)
+
+        player:send(packet)
+    elseif shop.category == 7 then
+        local packet = Packet.new(Cmd.NPC_INFO)
+        packet:writeUTF(shop.name)
+        packet:writeByte(4)
+        packet:writeShort(shop.items:size())
+        shop.items:forEach(function(itemData)
+            packet:writeShort(itemData.id)
+        end)
+
+        player:send(packet)
+    end
+end
+
 function GameWritter.updateInventory(player)
     updateInventory(player, player.inventory, 4)
     updateInventory(player, player.inventory, 7)
     updateInventory(player, player.inventory, 3)
+end
+
+function GameWritter.itemMap(player, id)
+    local zoomLv = player.session:get("zoom")
+    local data = PartManager.getByZoom(zoomLv, 111, id)
+    if not data then return end
+
+    local packet = Packet.new(Cmd.LOAD_IMAGE_DATA_AUTO_EFF)
+    packet:writeByte(1)
+
+    packet:writeShort(#data.imageData)
+    packet:writeBytes(data.imageData)
+
+    packet:writeByte(0) -- dx
+    packet:writeByte(0) -- dy
+    packet:writeShort(0)
+
+    packet:writeShort(player.x / 24) -- x
+    packet:writeShort(player.y / 24) -- y
+    packet:writeByte(0)              -- Type Effect
+    packet:writeByte(0)              -- hOne
+
+    packet:writeShort(3000)          -- objectID
+    packet:writeShort(0)             -- Loop
+
+    packet:writeByte(1)              -- TypeObject
+    player:send(packet)
+    return packet
+end
+
+function GameWritter.openMenu(player, menu)
+    local packet = Packet.new(Cmd.DYNAMIC_MENU)
+
+    packet:writeShort(menu.npc)
+    packet:writeByte(menu.index)
+    packet:writeByte(menu.children:size())
+
+    menu.children:forEach(function(item)
+        packet:writeUTF(item.name)
+    end)
+
+    packet:writeUTF(menu.name)
+
+    player:send(packet)
 end
 
 return GameWritter

@@ -29,6 +29,7 @@ EquipType.types = {
     [Slot.FASHION_12] = { 30 }
 }
 
+
 function EquipType.getSlot(type)
     for slot, types in pairs(EquipType.types) do
         for _, value in ipairs(types) do
@@ -50,6 +51,33 @@ function EquipType.isValid(slot, type)
         if value == type then return true end
     end
     return false
+end
+
+function EquipType.sortItems(itemsList)
+    local slotPriority = {
+        [Slot.WEAPON]   = 1,
+        [Slot.ARMOR]    = 2,
+        [Slot.LEG]      = 3,
+        [Slot.HELMET]   = 4,
+        [Slot.GLOVE]    = 5,
+        [Slot.BOOTS]    = 6,
+        [Slot.NECKLACE] = 7,
+        [Slot.RING_1]   = 8,
+        [Slot.RING_2]   = 9,
+        [Slot.WING]     = 10,
+    }
+    return itemsList:sort(function(a, b)
+        if a.level ~= b.level then
+            return a.level < b.level
+        end
+        local slotA = EquipType.getSlot(a.type)
+        local slotB = EquipType.getSlot(b.type)
+
+        local priorityA = slotPriority[slotA] or 99
+        local priorityB = slotPriority[slotB] or 99
+
+        return priorityA < priorityB
+    end)
 end
 
 return EquipType

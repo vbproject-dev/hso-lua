@@ -1,4 +1,4 @@
-local ClassIds = require "modules.game.entities.ClassIds"
+local DamageType = require "modules.game.combat.DamageType"
 local Skill = class("Skill")
 
 Skill.PHYSICAL_SKILLS = {
@@ -95,19 +95,23 @@ function Skill:isBuffSkill()
     return self.type == 1 or self.type == 2
 end
 
+function Skill:isAttackSkill()
+    return not self:isBuffSkill()
+end
+
 function Skill:getDamageType()
     if self:isPhysicalSkill(self.id) then
-        return ClassIds.TYPE.PHYSICAL
+        return DamageType.PHYSICAL
     end
 
     if self.role == 0 then
-        return ClassIds.ELEMENT.FIRE
+        return DamageType.FIRE
     elseif self.role == 1 then
-        return ClassIds.ELEMENT.POISON
+        return DamageType.POISON
     elseif self.role == 2 then
-        return ClassIds.ELEMENT.ICE
+        return DamageType.ICE
     elseif self.role == 3 then
-        return ClassIds.ELEMENT.LIGHTING
+        return DamageType.LIGHTING
     end
 end
 
@@ -118,6 +122,19 @@ function Skill:canLearn(level, playerLevel)
 
     local skillLevel = self.levels:get(level - 1)
     return skillLevel ~= nil and playerLevel >= skillLevel.requiredLevel
+end
+
+function Skill:applyBonusLevel(bonus)
+    if self.level <= 0 or self:isMaxLevel() then return end
+
+    local level = math.min(self.level + bonus, self.levels:size())
+    self.levelData = self.levels:get(level - 1)
+end
+
+function Skill:attack(player, target)
+    local damage = self:calculateDamage(player, target)
+    target:onDamageTaken(player, damage, self)
+    return true
 end
 
 return Skill

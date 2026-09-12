@@ -12,4 +12,8 @@ function Npc:ctor(data)
     self.y = data.y
 end
 
+function Npc:getShop(id)
+    return self.shops:findFirst(function(shop) return shop.id == id end)
+end
+
 return Npc

@@ -9,6 +9,12 @@ function Potion:ctor(data)
     self.info = GameData.getPotion(self.id)
 end
 
+function Potion.create(data)
+    local info = GameData.getPotion(data.id)
+    if not info then return nil end
+    return Potion.new(info)
+end
+
 function Potion:toTable()
     return {
         id = self.id,

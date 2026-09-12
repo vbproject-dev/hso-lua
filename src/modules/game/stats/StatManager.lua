@@ -3,7 +3,8 @@ local StatDefs = require("modules.game.stats.StatDefs")
 
 local StatManager = class("StatManager")
 
-function StatManager:ctor()
+function StatManager:ctor(class)
+    self.class = class
     self.equipment = Stats.new()  -- Attribute from equipment
     self.attributes = Stats.new() -- Base Attribute based from STR, DEX, VIT, INT
     self.skills = Stats.new()     -- Pasive Skills
@@ -85,7 +86,7 @@ function StatManager:calculate()
     end
 
     if self.derivedFormula then
-        local derived = self.derivedFormula(flatSums, percentSums) or {}
+        local derived = self.derivedFormula(self.class, flatSums, percentSums) or {}
 
         for id, value in pairs(derived) do
             flatSums[id] = (flatSums[id] or 0) + value
@@ -102,9 +103,7 @@ function StatManager:calculate()
     end
 
     for id, percentValue in pairs(percentSums) do
-        if not StatDefs.flatIdFor(id) then
-            final:set(id, percentValue)
-        end
+        final:set(id, percentValue)
     end
 
     return final
@@ -112,6 +111,16 @@ end
 
 function StatManager:get(id)
     return self:calculate():get(id)
+end
+
+function StatManager:getBonusAttribute(id)
+    local value = self.equipment:get(id) + self.skills:get(id)
+
+    for _, buff in pairs(self.buffs) do
+        value = value + buff.stats:get(id)
+    end
+
+    return value
 end
 
 function StatManager:all()

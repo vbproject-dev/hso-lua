@@ -81,7 +81,7 @@ end
 function PacketReader.onDeleteItem(packet)
     return {
         category = packet:readByte(),
-        itemId = packet:readByte(),
+        itemId = packet:readShort(),
         action = packet:readByte(),
     }
 end
@@ -106,6 +106,36 @@ function PacketReader.onMonsterInfo(packet)
     }
 end
 
+function PacketReader.onBuyItem(packet)
+    return {
+        type = packet:readByte(),
+        id = packet:readShort(),
+        quantity = packet:readShort(),
+    }
+end
+
+function PacketReader.onDynamicMenu(packet)
+    return {
+        npcId = packet:readShort(),
+        menuId = packet:readByte(),
+        index = packet:readByte(),
+    }
+end
+
+function PacketReader.onUsePotion(packet)
+    return {
+        itemId = packet:readShort(),
+    }
+end
+
+function PacketReader.onFireMonster(packet)
+    return {
+        skillId = packet:readByte(),
+        type = packet:readByte(),
+        targetId = packet:readShort(),
+    }
+end
+
 return {
     [Cmd.LOGIN] = PacketReader.onLogin,
     [Cmd.LOAD_IMAGE] = PacketReader.onLoadImage,
@@ -120,4 +150,8 @@ return {
     [Cmd.ADD_BASE_SKILL_POINT] = PacketReader.onAddBaseSkillPoint,
     [Cmd.NPC_INFO] = PacketReader.onNpcInfo,
     [Cmd.MONSTER_INFO] = PacketReader.onMonsterInfo,
+    [Cmd.BUY_ITEM] = PacketReader.onBuyItem,
+    [Cmd.DYNAMIC_MENU] = PacketReader.onDynamicMenu,
+    [Cmd.USE_POTION] = PacketReader.onUsePotion,
+    [Cmd.FIRE_MONSTER] = PacketReader.onFireMonster,
 }

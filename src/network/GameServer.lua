@@ -1,12 +1,13 @@
-local Config          = require("core.Config")
-local MySQL           = require("core.MySQL")
-local Network         = require("network.Network")
-local HandlerRegistry = require("core.HandlerRegistry")
-local GameData        = require("database.GameData")
-local GameWorld       = require("modules.game.world.GameWorld")
-local ModuleRegistry  = require("core.ModuleRegistry")
-local NpcRegistry     = require("core.NpcRegistry")
-local Helper          = require("utils.Helper")
+local Config            = require("core.Config")
+local MySQL             = require("core.MySQL")
+local Network           = require("network.Network")
+local GameData          = require("database.GameData")
+local GameWorld         = require("modules.game.world.GameWorld")
+local HandlerRegistry   = require("core.HandlerRegistry")
+local ModuleRegistry    = require("core.ModuleRegistry")
+local NpcScriptRegistry = require("modules.game.npc.NpcScriptRegistry")
+
+
 
 
 local GameServer          = class("GameServer")
@@ -52,6 +53,7 @@ function GameServer:init()
 
     -- Network Writters
     ModuleRegistry.loadPackage("modules.writters")
+    ModuleRegistry.loadPackage("modules.game.items.function")
     -- Network Handlers
     local handlers = {
         { module = "modules.handlers.CommonHandler" },
@@ -61,13 +63,17 @@ function GameServer:init()
     }
     HandlerRegistry.loadAll(handlers)
 
-    -- Npc Handlers
+    -- Register NPC Scripts
     if GameData.npcs then
         GameData.npcs:forEach(function(npc)
-            local scriptName = Helper.trim(npc.name)
-            NpcRegistry.load(npc.id, "modules.game.npc." .. scriptName)
+            if npc.script_name then
+                NpcScriptRegistry.load(npc.id, "modules.game.npc." .. npc.script_name)
+            end
         end)
     end
+
+    NpcScriptRegistry.loadCommon("modules.game.npc.CommonScript")
+
 
     self.network:start(config.server.port)
 

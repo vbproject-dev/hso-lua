@@ -512,4 +512,3 @@ client:setHandler({
 | `Input.KEY_MUTE`                    | Mute key.                       |
 | `Input.KEY_VOLUMEUP`                | Volume Up key.                  |
 | `Input.KEY_VOLUMEDOWN`              | Volume Down key.                |
-
