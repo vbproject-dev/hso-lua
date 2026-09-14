@@ -251,4 +251,14 @@ function GameWritter.openMenu(player, menu)
     player:send(packet)
 end
 
+function GameWritter.fireMonster(player, context)
+    local packet = Packet.new(Cmd.FIRE_MONSTER)
+    packet:writeShort(context.attacker.id)
+    packet:writeByte(context.skill.id)
+    packet:writeByte(1)
+
+
+    player:send(packet)
+end
+
 return GameWritter

@@ -9,7 +9,29 @@ function Combat.dealDamageTo(player, target, skill)
     local skillDamage = Combat.calculateSkillDamage(baseDamage, skill)
 
 
-    log("Deal " .. skillDamage .. " damage to " .. target.name)
+    local damageContext = {
+        damage = skillDamage,
+        damageType = skill:getDamageType(),
+        isPenetrated = false,
+        isEvaded = false,
+        lifesteal = 0,
+        manasteal = 0
+    }
+
+    local textDamage = {}
+
+    -- Normal Damage
+    table.insert(textDamage, { id = 0, damage = skillDamage })
+    if Combat.isPenetration(target.stats) then
+        local penDamage = 0
+        damageContext.isPenetrated = true
+        table.insert(textDamage, { id = 3, damage = penDamage })
+    end
+
+    if Combat.isCritical(player.stats) then
+        damageContext.damage = math.floor(damageContext.damage * 1.5 + 0.5)
+        table.insert(textDamage, { id = 4, damage = damageContext.damage })
+    end
 end
 
 function Combat.calculateBaseDamage(stats, damageType)
@@ -64,6 +86,30 @@ function Combat.calculateSkillDamage(baseDamage, skill)
     local skillDamage = math.floor(baseDamage * (1 + percentRate) + 0.5) + flatDmg
 
     return math.max(0, skillDamage)
+end
+
+function Combat.isCritical(stats)
+    return math.random(10000) <= stats:get(StatIds.CRITICAL_RATE)
+end
+
+function Combat.isPenetration(stats)
+    return math.random(10000) <= stats:get(StatIds.PIERCING_ATTACK)
+end
+
+function Combat.isEvade(stats)
+    return math.random(10000) <= stats:get(StatIds.EVADE)
+end
+
+function Combat.calculateLifesteal(stats, damage)
+    return math.floor(damage * stats:get(StatIds.LIFE_STEAL) / 10000)
+end
+
+function Combat.calculateManaSteal(stats, damage)
+    return math.floor(damage * stats:get(StatIds.MANA_STEAL) / 10000)
+end
+
+function Combat.calculatePenetrationDamage(stats, damage)
+    return math.floor(damage * stats:get(StatIds.PIERCING_ATTACK) / 10000 + 0.5)
 end
 
 return Combat

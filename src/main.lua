@@ -3,7 +3,7 @@ require "core.Logger"
 require "core.Constants"
 local GameServer   = require "network.GameServer"
 local SceneManager = require "gfx.SceneManager"
-local WebServer    = require "network.WebServer"
+local WebServer    = require "web.WebServer"
 local Main         = class("Main")
 
 
