@@ -8,6 +8,7 @@ local GameData         = require "database.GameData"
 local CharacterWritter = require "modules.writters.CharacterWritter"
 local ModuleRegistry   = require "core.ModuleRegistry"
 local ObjectType       = require "modules.game.entities.ObjectType"
+local Combat           = require "modules.game.combat.Combat"
 local GameHandler      = {}
 
 
@@ -224,8 +225,16 @@ function GameHandler.onFireMonster(session, request)
                 local monsters = zone.monsters:filter(function(m)
                     return m:isInDistance(monster, distance)
                 end)
+
+                if player:useSkill(skill) then
+                    monsters:forEach(function(m)
+                        Combat.dealDamageTo(player, m, skill)
+                    end)
+                end
             else
-                player:useSkill(skill, monster)
+                if player:useSkill(skill) then
+                    Combat.dealDamageTo(player, monster, skill)
+                end
             end
         end
     end)

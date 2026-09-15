@@ -7,10 +7,13 @@ function BaseObject:ctor(data)
     self.mapId = self.location.map or -1
     self.x = self.location.x or 0
     self.y = self.location.y or 0
+
     self.hp = 0
     self.maxHp = 0
-
+    self.mp = 0
+    self.maxMp = 0
     self.zone = nil
+    self.stats = nil
 end
 
 function BaseObject:setPosition(x, y)
@@ -33,7 +36,17 @@ function BaseObject:getMap()
     return self.zone and self.zone.map or nil
 end
 
-function BaseObject:takeDamage(attacker, skill)
+function BaseObject:takeDamage(damage)
+    if self:isDead() then
+        return 0
+    end
+
+    local damage = math.max(0, damage or 0)
+    local actualDamage = math.min(self.hp, damage)
+
+    self.hp = self.hp - actualDamage
+
+    return actualDamage
 end
 
 function BaseObject:distanceTo(target)

@@ -257,6 +257,20 @@ function GameWritter.fireMonster(player, context)
     packet:writeByte(context.skill.id)
     packet:writeByte(1)
 
+    packet:writeShort(context.target.id)
+    packet:writeInt(context.finalDamage)
+    packet:writeInt(context.target.hp)
+
+    packet:writeByte(#context.textDamage)
+    for __, effect in ipairs(context.textDamage) do
+        packet:writeByte(effect.id)
+        packet:writeInt(effect.value)
+    end
+
+    packet:writeInt(context.attacker.hp)
+    packet:writeInt(context.attacker.mp)
+    packet:writeByte(11)
+    packet:writeInt(0)
 
     player:send(packet)
 end

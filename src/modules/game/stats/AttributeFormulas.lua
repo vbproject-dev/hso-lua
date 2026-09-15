@@ -70,6 +70,15 @@ function AttributeFormulas.compute(class, flatSums)
             [S.MP] = intel * 11,
             [S.PIERCING_ATTACK] = intel * 0.02
         }
+    elseif class == C.MONSTER then
+        return {
+            [S.BASIC_DAMAGE] = str * 0.02,
+            [S.PHYSICAL_DAMAGE] = str * 4,
+            [S.DEFENSE] = dex * 20,
+            [S.PLUS_DEFENSE] = dex * 0.01,
+            [S.HP] = vit * 320,
+            [S.MP] = intel * 10,
+        }
     end
 
     return {}

@@ -4,6 +4,7 @@ return {
         ASSASSIN = 1,
         MAGE     = 2,
         GUNNER   = 3,
+        MONSTER  = 4,
     },
     TYPE = {
         PHYSICAL = 0,

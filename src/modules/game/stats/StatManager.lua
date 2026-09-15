@@ -86,10 +86,14 @@ function StatManager:calculate()
     end
 
     if self.derivedFormula then
-        local derived = self.derivedFormula(self.class, flatSums, percentSums) or {}
+        local derived = self.derivedFormula(self.class, flatSums) or {}
 
         for id, value in pairs(derived) do
-            flatSums[id] = (flatSums[id] or 0) + value
+            if StatDefs.isPercent(id) then
+                percentSums[id] = (percentSums[id] or 0) + value
+            else
+                flatSums[id] = (flatSums[id] or 0) + value
+            end
         end
     end
 

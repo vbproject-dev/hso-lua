@@ -32,8 +32,8 @@ function Player:ctor(data)
     self.intelligence = data.intelligence or 5
 
     self.stats = StatManager.new(self.class)
-    self.stats:setDerivedFormula(function(class, flatSums, percentSums)
-        return AttributeFormulas.compute(class, flatSums, percentSums)
+    self.stats:setDerivedFormula(function(class, flatSums)
+        return AttributeFormulas.compute(class, flatSums)
     end)
 
     self.potentialPoints = data.potential_points or 0
@@ -293,17 +293,17 @@ function Player:recalculateStats()
     end)
 end
 
-function Player:useSkill(skill, target)
+function Player:useSkill(skill)
     if not skill or skill.level <= 0 then return false end
-    if not target then return false end
 
     if skill:isOnCooldown() then return false end
     if self.mp < skill.levelData.mpCost then return false end
 
     self.mp = math.max(0, self.mp - skill.levelData.mpCost)
 
-    Combat.dealDamageTo(self, target, skill)
     skill:onUse()
+
+    return true
 end
 
 function Player:toTable()

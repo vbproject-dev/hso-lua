@@ -168,6 +168,12 @@ function Zone:broadcast(packet, exceptPlayer)
 end
 
 function Zone:update(dt)
+    self.monsters:forEach(function(monster)
+        if monster.update then
+            monster:update(dt)
+        end
+    end)
+
     self.players:forEach(function(player)
         if player.update then
             player:update(dt)

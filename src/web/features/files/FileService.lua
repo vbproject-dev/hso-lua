@@ -219,4 +219,12 @@ function FileService:getExtension(path)
     return ext and ext:lower()
 end
 
+function FileService:zip(source, destination)
+    return File.zip(source, destination)
+end
+
+function FileService:unzip(source, destination)
+    return File.unzip(source, destination)
+end
+
 return FileService
